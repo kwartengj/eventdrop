@@ -80,7 +80,10 @@ export function advertiseOrigin() {
   const hostname = hostnameFromHost(seen || "");
   if (hostname && !isLoopback(hostname)) {
     const hasPort = seen?.startsWith("[") ? seen.includes("]:") : (seen || "").includes(":");
-    return `${url.protocol}//${hasPort ? seen : `${hostname}:${port}`}`;
+    // A public host with no port arrived on 80 or 443. Do not append the
+    // local dev port from PUBLIC_APP_URL, or share links miss the site.
+    if (hasPort) return `${url.protocol}//${seen}`;
+    return `${url.protocol}//${hostname}`;
   }
   return configured;
 }

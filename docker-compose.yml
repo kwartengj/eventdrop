@@ -1,7 +1,11 @@
 services:
   app:
     build: ./host
+    # Elastic Beanstalk Docker Compose does not run nginx, and the instance
+    # security group only allows port 80. The process still listens on 3000
+    # inside the container. Port 3000 stays published for local use.
     ports:
+      - "80:3000"
       - "3000:3000"
     environment:
       DATABASE_URL: postgres://eventdrop:eventdrop@postgres:5432/eventdrop
@@ -15,8 +19,10 @@ services:
       SESSION_DAYS: "30"
       COOKIE_SECURE: "false"
     depends_on:
-      - postgres
-      - minio
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     restart: unless-stopped
 
   postgres:

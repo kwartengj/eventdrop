@@ -13,7 +13,9 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_BOOTSTRAP=1
-RUN npm run build
+# t3.micro has 1 GB. Give the build a larger heap so it can use swap
+# instead of being killed while EC2 still shows Running.
+RUN NODE_OPTIONS=--max-old-space-size=1536 npm run build
 ENV SKIP_BOOTSTRAP=0
 
 EXPOSE 3000
