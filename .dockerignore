@@ -1,0 +1,10 @@
+.git
+.github
+mobile
+**/node_modules
+**/.next
+**/.env
+**/*.log
+host/tests
+host/.env
+*.md
