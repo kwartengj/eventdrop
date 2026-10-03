@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { and, count, desc, eq, gte, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -37,6 +37,7 @@ const mediaQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  since: z.string().datetime({ offset: true }).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(120),
 });
 
@@ -191,9 +192,10 @@ export async function completeUpload(auth: AuthBag, input: unknown) {
         "QUOTA",
       );
     }
-    const buf = await provider.getObject(upload.storageKey);
-    assertMagic(buf, upload.mimeType);
-    const hash = sha256Buffer(buf);
+    const header = await provider.readHead(upload.storageKey, 32);
+    assertMagic(header, upload.mimeType);
+    const hash = (upload.fileHash || "").toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(hash)) throw new HttpError(400, "Upload is missing a file hash", "BAD_UPLOAD");
     const existing = await readyByHash(record.event.id, hash);
     if (existing) {
       await provider.deleteObject(upload.storageKey);
@@ -205,49 +207,15 @@ export async function completeUpload(auth: AuthBag, input: unknown) {
       return { mediaId: existing.id, status: "duplicate" as const };
     }
 
-    let width: number | null = null;
-    let height: number | null = null;
-    let duration: number | null = null;
-    let thumbKey: string | null = null;
-    if (upload.mimeType.startsWith("image/")) {
-      try {
-        const inspected = await inspectImage(buf);
-        width = inspected.width;
-        height = inspected.height;
-        thumbKey = `events/${record.event.id}/thumbs/${upload.id}.jpg`;
-        await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
-      } catch {
-        // HEIC and other phone formats may not decode. Keep the original anyway.
-        width = null;
-        height = null;
-        thumbKey = null;
-      }
-    } else {
-      try {
-        const inspected = await inspectVideo(buf);
-        duration = inspected.duration;
-        if (inspected.thumb) {
-          thumbKey = `events/${record.event.id}/thumbs/${upload.id}.jpg`;
-          await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
-        }
-      } catch {
-        duration = null;
-      }
-    }
-
     const [item] = await db
       .insert(media)
       .values({
         eventId: record.event.id,
         contributorId: upload.contributorId,
         storageKey: upload.storageKey,
-        thumbKey,
         fileName: upload.fileName,
         mimeType: upload.mimeType,
         fileSize: head.size,
-        width,
-        height,
-        duration,
         hash,
         uploadedAt: new Date(),
         status: "ready",
@@ -259,6 +227,7 @@ export async function completeUpload(auth: AuthBag, input: unknown) {
       .update(uploads)
       .set({ status: "complete", mediaId: item.id, fileHash: hash, completedAt: new Date(), fileSize: head.size })
       .where(eq(uploads.id, upload.id));
+    scheduleFinish(item.id);
     return { mediaId: item.id, status: "complete" as const };
   } catch (error) {
     if (!(error instanceof HttpError) || error.code !== "NOT_UPLOADED") {
@@ -266,6 +235,52 @@ export async function completeUpload(auth: AuthBag, input: unknown) {
       await db.update(uploads).set({ status: "failed", error: message }).where(eq(uploads.id, upload.id));
     }
     throw error;
+  }
+}
+
+const finishing = new Set<string>();
+
+function scheduleFinish(mediaId: string) {
+  if (finishing.has(mediaId)) return;
+  finishing.add(mediaId);
+  void finishMedia(mediaId)
+    .catch((error) => {
+      console.error("thumbnail", error);
+    })
+    .finally(() => finishing.delete(mediaId));
+}
+
+/** Hash check and thumbnail run after the phone is told the upload finished. */
+async function finishMedia(mediaId: string) {
+  const [item] = await db.select().from(media).where(eq(media.id, mediaId)).limit(1);
+  if (!item || item.status !== "ready" || !item.storageKey) return;
+  const provider = activeProvider();
+  const buf = await provider.getObject(item.storageKey);
+  const hash = sha256Buffer(buf);
+  const stillReady = and(eq(media.id, item.id), eq(media.status, "ready"));
+  if (hash !== item.hash) {
+    await provider.deleteObject(item.storageKey).catch(() => undefined);
+    await db.update(media).set({ status: "deleted", deletedAt: new Date() }).where(stillReady);
+    return;
+  }
+  if (item.thumbKey) return;
+  try {
+    if (item.mimeType.startsWith("image/")) {
+      const inspected = await inspectImage(buf);
+      const thumbKey = `events/${item.eventId}/thumbs/${item.id}.jpg`;
+      await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
+      await db
+        .update(media)
+        .set({ thumbKey, width: inspected.width, height: inspected.height })
+        .where(stillReady);
+      return;
+    }
+    const inspected = await inspectVideo(buf);
+    const thumbKey = inspected.thumb ? `events/${item.eventId}/thumbs/${item.id}.jpg` : null;
+    if (inspected.thumb && thumbKey) await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
+    await db.update(media).set({ thumbKey, duration: inspected.duration }).where(stillReady);
+  } catch {
+    // HEIC and other phone formats may not decode. The original is already kept.
   }
 }
 
@@ -346,6 +361,12 @@ export async function listMedia(auth: AuthBag, eventId: string, query: unknown, 
   if (parsed.date) {
     filters.push(sql`${media.uploadedAt}::date = ${parsed.date}::date`);
   }
+  if (parsed.since) {
+    const since = new Date(parsed.since);
+    const recent = new Date(Date.now() - 10 * 60_000);
+    const window = or(gte(media.uploadedAt, since), and(isNull(media.thumbKey), gte(media.uploadedAt, recent)));
+    if (window) filters.push(window);
+  }
   if (!asHost && memberId && !guestCanSeeOthers(record)) {
     filters.push(eq(media.contributorId, memberId));
   }
@@ -368,39 +389,52 @@ export async function listMedia(auth: AuthBag, eventId: string, query: unknown, 
 
   const provider = activeProvider();
   const showNames = asHost || record.settings.showContributorNames;
-  const items = [];
-  for (const row of rows) {
-    const credits = asHost ? await creditsFor(row.item.id) : [];
-    const thumbKey = row.item.thumbKey || row.item.storageKey;
-    items.push({
-      id: row.item.id,
-      fileName: row.item.fileName,
-      mimeType: row.item.mimeType,
-      fileSize: row.item.fileSize,
-      width: row.item.width,
-      height: row.item.height,
-      duration: row.item.duration,
-      createdAt: row.item.createdAt,
-      uploadedAt: row.item.uploadedAt,
-      contributor: showNames ? { id: row.item.contributorId, name: row.contributorName } : null,
-      mine: memberId === row.item.contributorId || asHost,
-      canDelete: asHost || memberId === row.item.contributorId,
-      thumbUrl: await provider.presignGet(thumbKey),
-      url: await provider.presignGet(row.item.storageKey),
-      downloadUrl: await provider.presignGet(row.item.storageKey, { downloadName: row.item.fileName }),
-      credits: asHost ? credits : undefined,
-    });
-  }
+  const creditMap = asHost ? await creditsForMany(rows.map((row) => row.item.id)) : new Map<string, { id: string; name: string }[]>();
+  const items = await Promise.all(
+    rows.map(async (row) => {
+      const thumbKey = row.item.thumbKey || row.item.storageKey;
+      const [thumbUrl, url, downloadUrl] = await Promise.all([
+        provider.presignGet(thumbKey),
+        provider.presignGet(row.item.storageKey),
+        provider.presignGet(row.item.storageKey, { downloadName: row.item.fileName }),
+      ]);
+      return {
+        id: row.item.id,
+        fileName: row.item.fileName,
+        mimeType: row.item.mimeType,
+        fileSize: row.item.fileSize,
+        width: row.item.width,
+        height: row.item.height,
+        duration: row.item.duration,
+        createdAt: row.item.createdAt,
+        uploadedAt: row.item.uploadedAt,
+        contributor: showNames ? { id: row.item.contributorId, name: row.contributorName } : null,
+        mine: memberId === row.item.contributorId || asHost,
+        canDelete: asHost || memberId === row.item.contributorId,
+        thumbUrl,
+        url,
+        downloadUrl,
+        credits: asHost ? (creditMap.get(row.item.id) ?? []) : undefined,
+      };
+    }),
+  );
   return { items, galleryClosed: false, counts: await countsFor(eventId) };
 }
 
-async function creditsFor(mediaId: string) {
+async function creditsForMany(mediaIds: string[]) {
+  const grouped = new Map<string, { id: string; name: string }[]>();
+  if (!mediaIds.length) return grouped;
   const rows = await db
-    .select({ id: eventMembers.id, name: eventMembers.displayName })
+    .select({ mediaId: mediaCredits.mediaId, id: eventMembers.id, name: eventMembers.displayName })
     .from(mediaCredits)
     .innerJoin(eventMembers, eq(eventMembers.id, mediaCredits.contributorId))
-    .where(eq(mediaCredits.mediaId, mediaId));
-  return rows;
+    .where(inArray(mediaCredits.mediaId, mediaIds));
+  for (const row of rows) {
+    const list = grouped.get(row.mediaId) ?? [];
+    list.push({ id: row.id, name: row.name });
+    grouped.set(row.mediaId, list);
+  }
+  return grouped;
 }
 
 export async function deleteMedia(auth: AuthBag, mediaId: string) {

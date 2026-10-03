@@ -10,6 +10,7 @@ export const GET = route(async (req, ctx) => {
     contributorId: url.searchParams.get("contributorId") || undefined,
     type: url.searchParams.get("type") || undefined,
     date: url.searchParams.get("date") || undefined,
+    since: url.searchParams.get("since") || undefined,
     limit: url.searchParams.get("limit") || undefined,
   };
   return { body: await listMedia(await loadAuth(req), id, query, view) };

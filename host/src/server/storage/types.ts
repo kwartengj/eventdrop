@@ -1,3 +1,5 @@
+import type { Readable } from "node:stream";
+
 export type StorageKind = "minio" | "s3" | "r2" | "google_drive" | "dropbox" | "local";
 
 export interface PresignPut {
@@ -15,6 +17,10 @@ export interface StorageProvider {
   presignPut(key: string, mime: string, size: number): Promise<PresignPut>;
   presignGet(key: string, opts?: { downloadName?: string }): Promise<string>;
   head(key: string): Promise<{ size: number; contentType?: string } | null>;
+  /** First bytes, used to check the file type without downloading it. */
+  readHead(key: string, bytes: number): Promise<Buffer>;
+  /** Stream the object. Callers must consume or destroy it. */
+  openObject(key: string): Promise<Readable>;
   getObject(key: string): Promise<Buffer>;
   putObject(key: string, body: Buffer, mime: string): Promise<void>;
   deleteObject(key: string): Promise<void>;

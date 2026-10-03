@@ -1,3 +1,4 @@
+import type { Readable } from "node:stream";
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
@@ -85,6 +86,22 @@ export class S3StorageProvider implements StorageProvider {
       if (missing(error)) return null;
       throw error;
     }
+  }
+
+  async readHead(key: string, bytes: number) {
+    const result = await this.internal.send(
+      new GetObjectCommand({ Bucket: bucket(), Key: key, Range: `bytes=0-${Math.max(0, bytes - 1)}` }),
+    );
+    const chunk = await result.Body?.transformToByteArray();
+    if (!chunk) throw new Error("Empty object");
+    return Buffer.from(chunk);
+  }
+
+  async openObject(key: string) {
+    const result = await this.internal.send(new GetObjectCommand({ Bucket: bucket(), Key: key }));
+    const body = result.Body as Readable | undefined;
+    if (!body || typeof body.pipe !== "function") throw new Error("Storage did not return a stream");
+    return body;
   }
 
   async getObject(key: string) {

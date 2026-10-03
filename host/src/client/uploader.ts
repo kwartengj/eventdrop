@@ -1,6 +1,39 @@
 import { mimeFromName, mimeFromNameAndBytes, newId, sha256Hex } from "@/client/sha256";
 import { api, ApiError } from "@/lib/api";
 
+function hashInBackground(file: File): Promise<string> {
+  const onThisThread = () => file.arrayBuffer().then((buffer) => sha256Hex(buffer));
+  if (typeof Worker === "undefined") return onThisThread();
+  return new Promise<string>((resolve, reject) => {
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL("./sha256.worker.ts", import.meta.url));
+    } catch {
+      void onThisThread().then(resolve, reject);
+      return;
+    }
+    let settled = false;
+    const finish = (hash: string) => {
+      if (settled) return;
+      settled = true;
+      worker.terminate();
+      resolve(hash);
+    };
+    const failOver = () => {
+      if (settled) return;
+      settled = true;
+      worker.terminate();
+      void onThisThread().then(resolve, reject);
+    };
+    worker.onmessage = (event: MessageEvent<string | { error: string }>) => {
+      if (typeof event.data === "string") finish(event.data);
+      else failOver();
+    };
+    worker.onerror = () => failOver();
+    worker.postMessage(file);
+  });
+}
+
 export type UploadStatus = "review" | "queued" | "uploading" | "waiting" | "done" | "duplicate" | "error";
 
 export type UploadItem = {
@@ -135,7 +168,7 @@ export function createUploader(eventId: string, onChange: (items: UploadItem[]) 
     try {
       const mimeType = await fileMime(file);
       item.type = mimeType;
-      const fileHash = await sha256Hex(await file.arrayBuffer());
+      const fileHash = await hashInBackground(file);
       const presign = await api<{
         duplicate: boolean;
         uploadId: string;

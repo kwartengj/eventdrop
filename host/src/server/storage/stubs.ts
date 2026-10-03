@@ -36,6 +36,12 @@ export class UnavailableStorage implements StorageProvider {
   head(): Promise<{ size: number; contentType?: string } | null> {
     return this.fail();
   }
+  readHead(): Promise<Buffer> {
+    return this.fail();
+  }
+  openObject(): Promise<import("node:stream").Readable> {
+    return this.fail();
+  }
   getObject(): Promise<Buffer> {
     return this.fail();
   }

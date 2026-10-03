@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { GuestFrame } from "@/components/chrome";
-import { GalleryGrid } from "@/components/gallery";
+import { GalleryGrid, mergeGallery } from "@/components/gallery";
 import { api } from "@/lib/api";
 import type { MediaItem, PublicEvent } from "@/lib/types";
 
@@ -34,9 +34,11 @@ export default function GuestGalleryPage() {
   useEffect(() => {
     if (!event) return;
     let stop = false;
+    let cursor = "";
     async function load() {
       const query = new URLSearchParams();
       if (filter === "photo" || filter === "video") query.set("type", filter);
+      if (cursor) query.set("since", cursor);
       const data = await api<{ items: MediaItem[]; galleryClosed: boolean }>(
         `/api/events/${event!.id}/media?${query}`,
         {},
@@ -44,8 +46,11 @@ export default function GuestGalleryPage() {
       );
       if (stop) return;
       setClosed(data.galleryClosed);
-      const next = filter === "mine" ? data.items.filter((item) => item.mine) : data.items;
-      setItems(next);
+      const visible = filter === "mine" ? data.items.filter((item) => item.mine) : data.items;
+      const newest = data.items.find((item) => item.uploadedAt)?.uploadedAt;
+      if (!cursor) setItems(visible);
+      else setItems((current) => mergeGallery(visible, current));
+      if (newest && (!cursor || newest > cursor)) cursor = newest;
       const fresh = data.items.filter((item) => !seen.current.has(item.id) && !item.mine);
       if (primed.current && fresh.length) {
         const who = fresh[0]?.contributor?.name || "Someone";

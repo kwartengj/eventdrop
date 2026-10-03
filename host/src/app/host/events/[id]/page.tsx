@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HostFrame } from "@/components/chrome";
-import { GalleryGrid } from "@/components/gallery";
+import { GalleryGrid, mergeGallery } from "@/components/gallery";
 import { ago, api } from "@/lib/api";
 import type { HostEvent, MediaItem } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let stop = false;
+    let cursor = "";
     async function load() {
       const [eventRes, activityRes] = await Promise.all([
         api<{ event: HostEvent }>(`/api/events/${params.id}`),
@@ -33,8 +34,13 @@ export default function DashboardPage() {
       if (type) query.set("type", type);
       if (contributorId) query.set("contributorId", contributorId);
       if (date) query.set("date", date);
+      if (cursor) query.set("since", cursor);
       const media = await api<{ items: MediaItem[] }>(`/api/events/${params.id}/media?${query}`);
-      if (!stop) setItems(media.items);
+      if (stop) return;
+      const newest = media.items.find((item) => item.uploadedAt)?.uploadedAt;
+      if (!cursor) setItems(media.items);
+      else setItems((current) => mergeGallery(media.items, current));
+      if (newest && (!cursor || newest > cursor)) cursor = newest;
     }
     void load();
     const timer = window.setInterval(() => void load(), 5000);

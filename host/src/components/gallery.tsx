@@ -14,6 +14,15 @@ function duration(item: MediaItem) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
+export function mergeGallery(fresh: MediaItem[], current: MediaItem[]) {
+  if (!fresh.length) return current;
+  const known = new Set(current.map((item) => item.id));
+  const incoming = new Map(fresh.map((item) => [item.id, item]));
+  const prepend = fresh.filter((item) => !known.has(item.id));
+  const updated = current.map((item) => incoming.get(item.id) ?? item);
+  return [...prepend, ...updated];
+}
+
 export function GalleryGrid({
   items,
   hrefFor,
