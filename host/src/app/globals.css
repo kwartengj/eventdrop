@@ -493,9 +493,20 @@ a.card:hover { transform: translateY(-2px); }
 .poster .kicker { font-family: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.18em; font-weight: 600; color: oklch(0.5 0.15 36); font-size: 13px; }
 .poster h1 { font-size: clamp(1.8rem, 5vw, 2.9rem); margin-top: 16px; }
 .poster .qr { width: min(230px, 58%); }
-.live { min-height: 100dvh; background: #0f0c09; color: #f3ece2; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.live-stage { flex: 1; display: grid; place-items: center; }
-.live-stage img, .live-stage video { max-height: 70vh; border-radius: 18px; }
+.live {
+  height: 100dvh; box-sizing: border-box; overflow: hidden;
+  background: #0f0c09; color: #f3ece2; padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.live-controls { display: flex; flex-wrap: wrap; gap: 10px; flex: none; }
+.live-stage {
+  flex: 1; min-width: 0; min-height: 0; overflow: hidden;
+  display: grid; place-items: center;
+}
+.live-stage img, .live-stage video {
+  width: 100%; height: 100%; min-width: 0; min-height: 0;
+  object-fit: contain; object-position: center; border-radius: 18px;
+}
 
 @media (min-width: 720px) {
   .hostgrid { columns: 3; }
