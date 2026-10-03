@@ -1,0 +1,60 @@
+services:
+  app:
+    build: ./host
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://eventdrop:eventdrop@postgres:5432/eventdrop
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: eventdrop
+      S3_ACCESS_KEY: eventdrop
+      S3_SECRET_KEY: eventdrop-secret
+      PUBLIC_APP_URL: http://192.168.1.170:3000  #replace this with network ip of the host
+      SESSION_DAYS: "30"
+      COOKIE_SECURE: "false"
+    depends_on:
+      - postgres
+      - minio
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eventdrop
+      POSTGRES_PASSWORD: eventdrop
+      POSTGRES_DB: eventdrop
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventdrop -d eventdrop"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    build: ./docker/minio
+    image: eventdrop-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: eventdrop
+      MINIO_ROOT_PASSWORD: eventdrop-secret
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  pgdata:
+  miniodata:
