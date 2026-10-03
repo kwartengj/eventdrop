@@ -8,6 +8,12 @@ import { GuestFrame } from "@/components/chrome";
 import { api } from "@/lib/api";
 import type { PublicEvent } from "@/lib/types";
 
+// Phones keep the camera's own file when the picker is not forced through the
+// browser camera. `capture` makes iOS and Android hand back a smaller photo or video.
+const originalPhotos = "image/heic,image/heif,.heic,.heif,image/*";
+const originalVideos = "video/quicktime,video/mp4,video/webm,.mov,.mp4,.m4v,video/*";
+const originalMedia = `${originalPhotos},${originalVideos}`;
+
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -134,7 +140,7 @@ export default function UploadPage() {
               Add more
               <input
                 type="file"
-                accept="image/*,video/*"
+                accept={originalMedia}
                 multiple
                 onChange={(event) => {
                   take([...(event.target.files || [])]);
@@ -159,7 +165,7 @@ export default function UploadPage() {
             <span style={{ fontSize: 15, opacity: 0.88 }}>Pick as many as you like</span>
             <input
               type="file"
-              accept="image/*,video/*"
+              accept={originalMedia}
               multiple
               onChange={(event) => {
                 take([...(event.target.files || [])]);
@@ -172,8 +178,7 @@ export default function UploadPage() {
               Take a photo
               <input
                 type="file"
-                accept="image/*"
-                capture="environment"
+                accept={originalPhotos}
                 onChange={(event) => {
                   take([...(event.target.files || [])]);
                   event.target.value = "";
@@ -184,8 +189,7 @@ export default function UploadPage() {
               Record video
               <input
                 type="file"
-                accept="video/*"
-                capture="environment"
+                accept={originalVideos}
                 onChange={(event) => {
                   take([...(event.target.files || [])]);
                   event.target.value = "";
