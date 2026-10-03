@@ -17,6 +17,22 @@ String sha256Bytes(List<int> bytes) => sha256.convert(bytes).toString();
 
 String normalizeCode(String value) => value.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
+/// Builds an API URL from a host address. A missing scheme is treated as http,
+/// and any path on the address is ignored so a pasted join link still hits `/api`.
+Uri resolveApi(String baseUrl, String path, [Map<String, String>? query]) {
+  var value = baseUrl.trim();
+  if (value.isEmpty) value = 'http://localhost:3000';
+  if (!RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*://').hasMatch(value)) value = 'http://$value';
+  final parsed = Uri.parse(value);
+  if (parsed.host.isEmpty) {
+    throw ApiException('The server address "$baseUrl" is not a valid URL.', 0);
+  }
+  final origin = Uri(scheme: parsed.scheme, host: parsed.host, port: parsed.hasPort ? parsed.port : null);
+  final joined = origin.replace(path: path.startsWith('/') ? path : '/$path');
+  if (query == null || query.isEmpty) return joined;
+  return joined.replace(queryParameters: query);
+}
+
 class EventDropApi {
   EventDropApi({
     this.baseUrl = const String.fromEnvironment('API_BASE', defaultValue: 'http://localhost:3000'),
@@ -59,18 +75,29 @@ class EventDropApi {
     bool guest = false,
     Map<String, String>? query,
   }) async {
-    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    final headers = <String, String>{'Content-Type': 'application/json'};
+    final uri = resolveApi(baseUrl, path, query);
+    final headers = <String, String>{};
+    if (body != null) headers['Content-Type'] = 'application/json';
     final token = guest ? guestToken : hostToken;
     if (token != null) headers['Authorization'] = 'Bearer $token';
     if (guest) headers['X-EventDrop-View'] = 'guest';
-    final response = await _client.send(
-      http.Request(method, uri)
-        ..headers.addAll(headers)
-        ..body = body == null ? '' : jsonEncode(body),
-    );
+    final request = http.Request(method, uri)..headers.addAll(headers);
+    if (body != null) request.body = jsonEncode(body);
+    final response = await _client.send(request);
     final text = await response.stream.bytesToString();
-    final decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text) as Map<String, dynamic>;
+    final trimmed = text.trimLeft();
+    if (trimmed.startsWith('<')) {
+      throw ApiException(
+        'The address $uri returned a web page, not the EventDrop API. Set the server to the website, for example http://192.168.1.170:3000, and keep Flutter on a different port.',
+        response.statusCode,
+      );
+    }
+    Map<String, dynamic> decoded;
+    try {
+      decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text) as Map<String, dynamic>;
+    } on FormatException {
+      throw ApiException('The address $uri did not return event data.', response.statusCode);
+    }
     if (response.statusCode >= 400) {
       throw ApiException(decoded['error']?.toString() ?? 'Request failed', response.statusCode);
     }

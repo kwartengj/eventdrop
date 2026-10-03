@@ -130,7 +130,12 @@ class _LandingScreenState extends State<LandingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Brand()),
       body: current == null
-          ? Center(child: Text(error ?? 'Finding the event…'))
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(error ?? 'Finding the event…', textAlign: TextAlign.center),
+              ),
+            )
           : adaptiveBody(
               ListView(
               padding: EdgeInsets.fromLTRB(widthPad(context), 8, widthPad(context), 28),

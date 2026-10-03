@@ -9,9 +9,30 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('join urls keep the server origin', () {
+    expect(resolveApi('192.168.1.170:3000', '/api/join/ABC123').toString(), 'http://192.168.1.170:3000/api/join/ABC123');
+    expect(
+      resolveApi('http://192.168.1.170:3000/api/join/G8QHLP', '/api/join/ABC123').toString(),
+      'http://192.168.1.170:3000/api/join/ABC123',
+    );
+    expect(resolveApi('http://192.168.1.170:3000/', '/api/join/ABC123').toString(), 'http://192.168.1.170:3000/api/join/ABC123');
+  });
+
   test('hashes bytes and normalizes codes', () {
     expect(sha256Bytes(utf8.encode('abc')), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     expect(normalizeCode(' ab-c123 '), 'ABC123');
+  });
+
+  test('a web page from the server is reported as the wrong address', () async {
+    final api = EventDropApi(
+      baseUrl: 'http://192.168.1.170:3000',
+      persist: false,
+      client: MockClient((request) async => http.Response('<!DOCTYPE html><html></html>', 200)),
+    );
+    expect(
+      api.preview('ABC123'),
+      throwsA(isA<ApiException>().having((error) => error.message, 'message', contains('web page'))),
+    );
   });
 
   testWidgets('code screen shows the tagline and continue', (tester) async {
