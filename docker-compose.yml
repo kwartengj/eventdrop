@@ -2,7 +2,7 @@ services:
   app:
     build: ./host
     ports:
-      - "80:3000"
+      - "3000:3000"
     environment:
       DATABASE_URL: postgres://eventdrop:eventdrop@postgres:5432/eventdrop
       S3_ENDPOINT: http://minio:9000
