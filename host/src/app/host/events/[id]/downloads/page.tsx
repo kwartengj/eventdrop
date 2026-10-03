@@ -40,43 +40,68 @@ export default function DownloadsPage() {
     }
   }
 
+  const cards = [
+    ["photos", "All photos", "Every photo in one ZIP"],
+    ["videos", "All videos", "Every video in one ZIP"],
+    ["all", "Everything", "Photos and videos together"],
+  ] as const;
+
   return (
     <HostFrame>
-      <p className="eyebrow">Export</p>
-      <h1 style={{ fontSize: 42 }}>Downloads</h1>
-      <p className="lede">Server-side ZIP. Large sets stay in a job until the archive is ready.</p>
-      <div className="stats" style={{ marginTop: 16 }}>
-        <button className="btn" type="button" onClick={() => start("photos")}>
-          Download All Photos
-        </button>
-        <button className="btn secondary" type="button" onClick={() => start("videos")}>
-          Download All Videos
-        </button>
-        <button className="btn secondary" type="button" onClick={() => start("all")}>
-          Download Everything
-        </button>
-      </div>
-      {error ? <p className="bad">{error}</p> : null}
-      <div className="stack" style={{ marginTop: 22 }}>
-        {jobs.map((job) => (
-          <div key={job.id} className="card row">
-            <div>
-              <strong>{job.scope}</strong>
-              <div className="fine">
-                {job.status}
-                {job.fileCount != null ? ` · ${job.fileCount} files` : ""}
-                {job.error ? ` · ${job.error}` : ""}
+      <div className="stack" style={{ gap: 22, maxWidth: 900 }}>
+        <div>
+          <h1 style={{ fontSize: 34 }}>Download</h1>
+          <p className="lede" style={{ marginTop: 8 }}>
+            Archives are packed on the server. Large ones run in the background until they are ready.
+          </p>
+        </div>
+        <div className="stats" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+          {cards.map(([scope, title, meta]) => (
+            <div key={scope} className="card stack" style={{ gap: 16 }}>
+              <div>
+                <b style={{ fontSize: 18 }}>{title}</b>
+                <div className="fine">{meta}</div>
               </div>
+              <button className="btn" type="button" onClick={() => start(scope)}>
+                Prepare ZIP
+              </button>
             </div>
-            {job.status === "ready" && job.downloadUrl ? (
-              <a className="btn small" href={job.downloadUrl}>
-                Download ZIP
-              </a>
-            ) : (
-              <span className="fine">{job.status === "failed" ? "Failed" : "Preparing…"}</span>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        {error ? <p className="bad">{error}</p> : null}
+        <div className="card" style={{ padding: "8px 20px" }}>
+          <div style={{ padding: "12px 0", fontWeight: 700 }}>Archives</div>
+          {jobs.length === 0 ? <p className="fine">No archives yet.</p> : null}
+          {jobs.map((job) => {
+            const ready = job.status === "ready";
+            const color = job.status === "failed" ? "var(--danger)" : ready ? "var(--ok)" : "var(--accent)";
+            return (
+              <div key={job.id} className="row" style={{ padding: "14px 0", borderTop: "1px solid var(--line)" }}>
+                <div style={{ flex: 1 }}>
+                  <div className="row">
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>
+                      {job.scope}
+                      {job.fileCount != null ? ` · ${job.fileCount} files` : ""}
+                    </span>
+                    <span style={{ color, fontWeight: 600, fontSize: 13 }}>{job.error || job.status}</span>
+                  </div>
+                  <div className="bar" style={{ marginTop: 8 }}>
+                    <span style={{ width: ready ? "100%" : "40%", background: color }} />
+                  </div>
+                </div>
+                {ready && job.downloadUrl ? (
+                  <a className="btn secondary small" href={job.downloadUrl}>
+                    Save ZIP
+                  </a>
+                ) : (
+                  <span className="btn secondary small" style={{ opacity: 0.45 }}>
+                    Save ZIP
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </HostFrame>
   );
