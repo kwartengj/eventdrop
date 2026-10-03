@@ -39,12 +39,12 @@ class _CodeScreenState extends State<CodeScreen> {
               const Spacer(),
               TextButton(onPressed: widget.onToggleTheme, child: const Text('Theme')),
             ]),
-            const SizedBox(height: 36),
-            Text('JOIN AN EVENT', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), letterSpacing: 1.4, fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            const Text("One event. Everyone's photos. One place.", style: TextStyle(fontSize: 36, height: 1, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            const Text('Enter the code from the invite. No account.'),
+            const SizedBox(height: 48),
+            const Text('Join an event', style: TextStyle(fontSize: 36, height: 1.05, fontWeight: FontWeight.w700, letterSpacing: -0.6)),
+            const SizedBox(height: 10),
+            const Text("Enter the 6-character code from the invite or poster."),
+            const SizedBox(height: 4),
+            const Text("One event. Everyone's photos. One place.", style: TextStyle(fontSize: 13)),
             const SizedBox(height: 22),
             TextField(
               controller: code,
@@ -63,7 +63,7 @@ class _CodeScreenState extends State<CodeScreen> {
                 }
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => LandingScreen(api: widget.api, code: next)));
               },
-              child: const Text('Continue'),
+              child: const Text('Join event'),
             ),
             if (error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(error!, style: const TextStyle(color: Color(0xFF8C3A2F)))),
             TextButton(
@@ -145,7 +145,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 const SizedBox(height: 16),
                 TextField(controller: name, decoration: const InputDecoration(labelText: 'Your name (optional)')),
                 const SizedBox(height: 12),
-                FilledButton(onPressed: current['uploadsOpen'] == false ? null : () => enter('upload'), child: const Text('Add Photos')),
+                FilledButton(onPressed: current['uploadsOpen'] == false ? null : () => enter('upload'), child: const Text('Join & add photos')),
                 const SizedBox(height: 8),
                 OutlinedButton(onPressed: () => enter('gallery'), child: const Text('Browse gallery')),
                 if (error != null) Text(error!),
@@ -211,7 +211,7 @@ class _UploadScreenState extends State<UploadScreen> {
   final items = <_UploadItem>[];
   bool reviewing = false;
 
-  Future<void> add(List<XFile> files, {bool fromCamera = false}) async {
+  Future<void> add(List<XFile> files) async {
     final incoming = <_UploadItem>[];
     for (final file in files) {
       final bytes = await file.readAsBytes();
@@ -219,15 +219,12 @@ class _UploadScreenState extends State<UploadScreen> {
     }
     if (!mounted) return;
     setState(() {
-      if (!fromCamera && (incoming.length >= 20 || reviewing)) {
-        reviewing = true;
-        for (final item in incoming) {
-          item.status = 'review';
-        }
+      reviewing = true;
+      for (final item in incoming) {
+        item.status = 'review';
       }
       items.addAll(incoming);
     });
-    if (!reviewing) await _pump();
   }
 
   Future<void> _pump() async {
@@ -266,17 +263,17 @@ class _UploadScreenState extends State<UploadScreen> {
                 final files = await picker.pickMultipleMedia();
                 if (files.isNotEmpty) await add(files);
               },
-              child: const Text('Add Photos & Videos'),
+              child: const Text('Add photos & videos'),
             ),
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: () async {
               final file = await picker.pickImage(source: ImageSource.camera);
               if (file != null) {
-                await add([file], fromCamera: true);
+                await add([file]);
               }
             },
-            child: const Text('Shoot & drop'),
+            child: const Text('Take a photo'),
           ),
           if (reviewing) ...[
             const SizedBox(height: 12),

@@ -16,7 +16,6 @@ export type UploadItem = {
 
 type Stored = { id: string; eventId: string; name: string; type: string; blob: Blob };
 
-const REVIEW_AT = 20;
 const PARALLEL = 3;
 
 function openDb(): Promise<IDBDatabase> {
@@ -211,8 +210,7 @@ export function createUploader(eventId: string, onChange: (items: UploadItem[]) 
   }
 
   function addFiles(list: File[]) {
-    const reviewing = items.some((item) => item.status === "review");
-    const hold = reviewing || list.length >= REVIEW_AT;
+    const hold = true;
     for (const file of list) {
       const id = newId();
       const previewUrl = URL.createObjectURL(file);

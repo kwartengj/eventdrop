@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { GuestFrame } from "@/components/chrome";
 import { GalleryGrid } from "@/components/gallery";
 import { api } from "@/lib/api";
-import type { Contributor, MediaItem, PublicEvent } from "@/lib/types";
+import type { MediaItem, PublicEvent } from "@/lib/types";
 
 export default function GuestGalleryPage() {
   const params = useParams<{ code: string }>();
@@ -15,24 +15,19 @@ export default function GuestGalleryPage() {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [closed, setClosed] = useState(false);
   const [toast, setToast] = useState("");
-  const [type, setType] = useState("");
-  const [contributorId, setContributorId] = useState("");
-  const [date, setDate] = useState("");
-  const [people, setPeople] = useState<Contributor[]>([]);
+  const [filter, setFilter] = useState<"all" | "photo" | "video" | "mine">("all");
+  const [name, setName] = useState("");
   const seen = useRef<Set<string>>(new Set());
   const primed = useRef(false);
 
   useEffect(() => {
-    api<{ event: PublicEvent; joined: boolean }>(`/api/join/${params.code}`, {}, "guest").then(async (data) => {
+    api<{ event: PublicEvent; joined: boolean; displayName: string | null }>(`/api/join/${params.code}`, {}, "guest").then((data) => {
       if (!data.joined) {
         router.replace(`/e/${params.code}`);
         return;
       }
       setEvent(data.event);
-      if (data.event.showContributorNames) {
-        const listed = await api<{ contributors: Contributor[] }>(`/api/events/${data.event.id}/contributors`).catch(() => null);
-        if (listed) setPeople(listed.contributors);
-      }
+      if (data.displayName && data.displayName !== "Guest") setName(data.displayName);
     });
   }, [params.code, router]);
 
@@ -41,9 +36,7 @@ export default function GuestGalleryPage() {
     let stop = false;
     async function load() {
       const query = new URLSearchParams();
-      if (type) query.set("type", type);
-      if (contributorId) query.set("contributorId", contributorId);
-      if (date) query.set("date", date);
+      if (filter === "photo" || filter === "video") query.set("type", filter);
       const data = await api<{ items: MediaItem[]; galleryClosed: boolean }>(
         `/api/events/${event!.id}/media?${query}`,
         {},
@@ -51,13 +44,14 @@ export default function GuestGalleryPage() {
       );
       if (stop) return;
       setClosed(data.galleryClosed);
-      setItems(data.items);
+      const next = filter === "mine" ? data.items.filter((item) => item.mine) : data.items;
+      setItems(next);
       const fresh = data.items.filter((item) => !seen.current.has(item.id) && !item.mine);
       if (primed.current && fresh.length) {
-        const name = fresh[0]?.contributor?.name || "Someone";
+        const who = fresh[0]?.contributor?.name || "Someone";
         const photos = fresh.filter((item) => item.mimeType.startsWith("image/")).length;
-        setToast(photos === fresh.length ? `${name} uploaded ${photos} photos` : `${name} added ${fresh.length} items`);
-        window.setTimeout(() => setToast(""), 4000);
+        setToast(photos === fresh.length ? `${who} added ${photos} photos` : `${who} added ${fresh.length} items`);
+        window.setTimeout(() => setToast(""), 2800);
       }
       for (const item of data.items) seen.current.add(item.id);
       primed.current = true;
@@ -68,48 +62,52 @@ export default function GuestGalleryPage() {
       stop = true;
       window.clearInterval(timer);
     };
-  }, [event, type, contributorId, date]);
+  }, [event, filter]);
 
   return (
     <GuestFrame>
-      <div className="row">
-        <div>
-          <p className="eyebrow">Gallery</p>
-          <h1 style={{ fontSize: 32 }}>{event?.name || "Gallery"}</h1>
+      <div className="guest-head">
+        <div className="row">
+          <div className={event?.coverUrl ? "thumb" : "thumb stripes"}>{event?.coverUrl ? <img src={event.coverUrl} alt="" /> : null}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 17 }}>{event?.name || "Gallery"}</div>
+            <div className="fine">{name ? `Hi ${name}` : "Guests sharing"}</div>
+          </div>
+          <span className="live-dot">
+            <i />
+            Live
+          </span>
         </div>
-        <Link className="textbtn" href={`/e/${params.code}`}>
-          Event
-        </Link>
+        <div className="tabs">
+          <Link href={`/e/${params.code}/upload`}>Add</Link>
+          <Link className="on" href={`/e/${params.code}/gallery`}>
+            Gallery · {items.length}
+          </Link>
+        </div>
       </div>
-      <div className="filters">
-        {[
-          ["", "All"],
-          ["photo", "Photos"],
-          ["video", "Videos"],
-        ].map(([value, label]) => (
-          <button key={label} className={type === value ? "chip on" : "chip"} type="button" onClick={() => setType(value)}>
+      <div className="chips">
+        {(
+          [
+            ["all", "All"],
+            ["photo", "Photos"],
+            ["video", "Videos"],
+            ["mine", "Mine"],
+          ] as const
+        ).map(([value, label]) => (
+          <button key={value} className={filter === value ? "chip on" : "chip"} type="button" onClick={() => setFilter(value)}>
             {label}
           </button>
         ))}
-        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={{ width: 150 }} />
       </div>
-      {people.length ? (
-        <select value={contributorId} onChange={(event) => setContributorId(event.target.value)}>
-          <option value="">Everyone</option>
-          {people.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
+      {toast ? (
+        <div className="toast">
+          <span>
+            <i className="pulse" style={{ background: "var(--accent)" }} />
+            {toast}
+          </span>
+        </div>
       ) : null}
-      {closed ? <p>This gallery is no longer available.</p> : <GalleryGrid items={items} hrefFor={(id) => `/e/${params.code}/view/${id}`} />}
-      {toast ? <div className="toast">{toast}</div> : null}
-      <div className="dock">
-        <Link className="btn block" href={`/e/${params.code}/upload`}>
-          Add Photos
-        </Link>
-      </div>
+      {closed ? <p style={{ padding: 20 }}>This gallery is no longer available.</p> : <GalleryGrid items={items} hrefFor={(id) => `/e/${params.code}/view/${id}`} />}
     </GuestFrame>
   );
 }

@@ -33,59 +33,51 @@ export function Viewer({
   const prev = items[index - 1];
   const next = items[index + 1];
   const video = item.mimeType.startsWith("video/");
+  const who = item.contributor?.name || "Guest";
 
   return (
     <div className="viewer">
+      <div style={{ height: 12 }} />
       <header>
-        <button className="textbtn" type="button" onClick={onClose} style={{ color: "#f3ede4" }}>
-          Close
+        <button className="round" type="button" onClick={onClose} aria-label="Close">
+          ×
         </button>
-        <span>
+        <span style={{ fontWeight: 600, opacity: 0.8 }}>
           {index + 1} / {items.length}
         </span>
-        <a href={item.downloadUrl}>Download</a>
+        <a className="round" href={item.downloadUrl} aria-label="Download">
+          ↓
+        </a>
       </header>
       <div className="stage">
-        {video ? (
-          <video key={item.id} src={item.url} controls autoPlay playsInline />
-        ) : (
-          <img key={item.id} src={item.url} alt={item.fileName} />
-        )}
+        {video ? <video key={item.id} src={item.url} controls autoPlay playsInline /> : <img key={item.id} src={item.url} alt="" />}
+        {prev ? (
+          <a id="prev-media" className="round" href={hrefFor(prev.id)} style={{ position: "absolute", left: 12 }}>
+            ←
+          </a>
+        ) : null}
+        {next ? (
+          <a id="next-media" className="round" href={hrefFor(next.id)} style={{ position: "absolute", right: 12 }}>
+            →
+          </a>
+        ) : null}
       </div>
       <footer>
-        {prev ? (
-          <a id="prev-media" href={hrefFor(prev.id)}>
-            Previous
-          </a>
+        <span className="avatar">{who.slice(0, 1)}</span>
+        <div style={{ flex: 1 }}>
+          <b>{who}</b>
+          <div style={{ fontSize: 13, opacity: 0.65 }}>{ago(item.uploadedAt) || "Just now"}</div>
+          {item.credits && item.credits.length > 1 ? (
+            <div style={{ fontSize: 13, opacity: 0.65 }}>Also added by {item.credits.map((credit) => credit.name).join(", ")}</div>
+          ) : null}
+        </div>
+        {item.canDelete && onDelete ? (
+          <button type="button" onClick={() => onDelete(item.id)} style={{ border: 0, background: "rgba(255,255,255,.08)", color: "oklch(0.75 0.14 28)", fontWeight: 600, borderRadius: 12, padding: "10px 14px", cursor: "pointer" }}>
+            Delete
+          </button>
         ) : (
           <span />
         )}
-        <div style={{ textAlign: "center" }}>
-          <div>{item.contributor?.name}</div>
-          <div className="fine" style={{ color: "#b3a79b" }}>
-            {item.fileName} · {ago(item.uploadedAt)}
-            {item.duration ? ` · ${Math.round(item.duration)}s` : ""}
-          </div>
-          {item.credits && item.credits.length > 1 ? (
-            <div className="fine" style={{ color: "#b3a79b" }}>
-              Also added by {item.credits.map((credit) => credit.name).join(", ")}
-            </div>
-          ) : null}
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          {item.canDelete && onDelete ? (
-            <button className="textbtn" type="button" style={{ color: "#f0a397" }} onClick={() => onDelete(item.id)}>
-              Delete
-            </button>
-          ) : null}
-          {next ? (
-            <a id="next-media" href={hrefFor(next.id)}>
-              Next
-            </a>
-          ) : (
-            <span />
-          )}
-        </div>
       </footer>
     </div>
   );

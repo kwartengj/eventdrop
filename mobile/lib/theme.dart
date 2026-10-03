@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-const paper = Color(0xFFE7DED1);
-const paperDark = Color(0xFF161310);
+const paper = Color(0xFFF5EFE6);
+const paperDark = Color(0xFF16120E);
 const ink = Color(0xFF231D17);
-const inkDark = Color(0xFFF3EDE4);
+const inkDark = Color(0xFFF3ECE2);
 const muted = Color(0xFF6F655B);
-const coral = Color(0xFFE15B3A);
+const card = Color(0xFFFFFCF7);
+const cardDark = Color(0xFF211B16);
+const coral = Color(0xFFD2603F);
 
 ThemeData eventDropTheme({required Brightness brightness}) {
   final dark = brightness == Brightness.dark;
@@ -15,7 +17,7 @@ ThemeData eventDropTheme({required Brightness brightness}) {
     onPrimary: Colors.white,
     secondary: dark ? inkDark : ink,
     onSecondary: dark ? paperDark : paper,
-    surface: dark ? const Color(0xFF221C18) : const Color(0xFFF6F1EA),
+    surface: dark ? cardDark : card,
     onSurface: dark ? inkDark : ink,
     error: const Color(0xFF8C3A2F),
     onError: Colors.white,
@@ -39,9 +41,9 @@ ThemeData eventDropTheme({required Brightness brightness}) {
       style: FilledButton.styleFrom(
         backgroundColor: coral,
         foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(52),
-        shape: const StadiumBorder(),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        minimumSize: const Size.fromHeight(58),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
       ),
     ),
   );

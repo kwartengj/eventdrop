@@ -48,68 +48,99 @@ export default function DashboardPage() {
 
   return (
     <HostFrame>
-      <div className="row">
-        <div>
-          <p className="eyebrow">{event?.status}</p>
-          <h1 style={{ fontSize: 40 }}>{event?.name || "Gallery"}</h1>
-        </div>
-        <Link className="btn" href={`/host/events/${params.id}/share`}>
-          Share
-        </Link>
-      </div>
-      {event ? (
-        <div className="stats" style={{ margin: "18px 0" }}>
-          <div className="card stat">
-            <b>{event.counts.photos}</b>photos
+      <div className="stack" style={{ gap: 22 }}>
+        <div className="row" style={{ alignItems: "flex-end" }}>
+          <div className="stack" style={{ gap: 8 }}>
+            <span className="live-dot">
+              <i />
+              {event?.status === "active" ? "Live · uploads open" : event?.status || "Gallery"}
+            </span>
+            <h1 style={{ fontSize: 34 }}>{event?.name || "Gallery"}</h1>
           </div>
-          <div className="card stat">
-            <b>{event.counts.videos}</b>videos
-          </div>
-          <div className="card stat">
-            <b>{event.counts.contributors}</b>contributors
-          </div>
-          <div className="card stat">
-            <b style={{ fontSize: 18 }}>{event.quota.label}</b>
-            <div className="quota">
-              <span style={{ width: `${ratio}%` }} />
-            </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link className="btn secondary small" href={`/host/events/${params.id}/share`}>
+              Show QR
+            </Link>
+            <Link className="btn secondary small" href={`/host/events/${params.id}/live`}>
+              Live mode
+            </Link>
+            <Link className="btn small" href={`/host/events/${params.id}/downloads`}>
+              Download all
+            </Link>
           </div>
         </div>
-      ) : null}
-      <div className="filters" style={{ marginBottom: 12 }}>
-        {[
-          ["", "All"],
-          ["photo", "Photos"],
-          ["video", "Videos"],
-        ].map(([value, label]) => (
-          <button key={label} className={type === value ? "chip on" : "chip"} type="button" onClick={() => setType(value)}>
-            {label}
-          </button>
-        ))}
-        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={{ width: 160 }} />
-        <input
-          placeholder="Contributor id"
-          value={contributorId}
-          onChange={(event) => setContributorId(event.target.value)}
-          style={{ maxWidth: 220 }}
-        />
-      </div>
-      <div className="dash">
-        <GalleryGrid dense items={items} hrefFor={(id) => `/host/events/${params.id}/view/${id}`} />
-        <aside className="card stack">
-          <strong>Activity</strong>
-          {activity.length === 0 ? <p className="fine">Uploads will show up here.</p> : null}
-          {activity.map((row) => (
-            <div key={row.id}>
-              <div>
-                {row.name} · {row.fileName}
-              </div>
-              <div className="fine">
-                {row.status} · {ago(row.createdAt)}
+        {event ? (
+          <div className="stats">
+            <div className="card stat">
+              <b>{event.counts.photos}</b>
+              <span>photos</span>
+            </div>
+            <div className="card stat">
+              <b>{event.counts.videos}</b>
+              <span>videos</span>
+            </div>
+            <div className="card stat">
+              <b>{event.counts.contributors}</b>
+              <span>contributors</span>
+            </div>
+            <div className="card stat">
+              <b style={{ fontSize: 22 }}>{event.quota.label}</b>
+              <div className="quota">
+                <span style={{ width: `${ratio}%` }} />
               </div>
             </div>
-          ))}
-        </aside>
+          </div>
+        ) : null}
+        <div className="dash">
+          <div className="stack" style={{ gap: 14 }}>
+            <div className="row">
+              <div className="seg">
+                {[
+                  ["", "All"],
+                  ["photo", "Photos"],
+                  ["video", "Videos"],
+                ].map(([value, label]) => (
+                  <button key={label} className={type === value ? "on" : ""} type="button" onClick={() => setType(value)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label="Filter by date" />
+              <input placeholder="Contributor id" value={contributorId} onChange={(event) => setContributorId(event.target.value)} style={{ maxWidth: 180 }} />
+            </div>
+            <GalleryGrid dense items={items} hrefFor={(id) => `/host/events/${params.id}/view/${id}`} />
+          </div>
+          <aside className="rail">
+            <div className="card stack">
+              <b>Activity</b>
+              {activity.length === 0 ? <p className="fine">Uploads will show up here.</p> : null}
+              {activity.map((row) => (
+                <div key={row.id} className="row" style={{ alignItems: "center", justifyContent: "flex-start" }}>
+                  <span className="avatar" style={{ width: 30, height: 30, fontSize: 12 }}>
+                    {(row.name || "?").slice(0, 1)}
+                  </span>
+                  <div style={{ fontSize: 13 }}>
+                    <b>{row.name}</b> {row.fileName}
+                    <div className="fine">
+                      {row.status} · {ago(row.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {event?.qrDataUrl ? (
+              <div className="card row" style={{ justifyContent: "flex-start" }}>
+                <img src={event.qrDataUrl} alt="" style={{ width: 64, height: 64, borderRadius: 6 }} />
+                <div className="fine">
+                  Guests join with
+                  <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", letterSpacing: "0.08em" }}>
+                    {event.joinCode}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </aside>
+        </div>
       </div>
     </HostFrame>
   );

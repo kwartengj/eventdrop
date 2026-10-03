@@ -17,8 +17,9 @@ void main() {
   testWidgets('code screen shows the tagline and continue', (tester) async {
     final api = EventDropApi(persist: false, client: MockClient((request) async => http.Response('{}', 200)));
     await tester.pumpWidget(EventDropApp(api: api));
+    expect(find.text('Join an event'), findsOneWidget);
     expect(find.text("One event. Everyone's photos. One place."), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Join event'), findsOneWidget);
     expect(find.text('Hosting? Sign in'), findsOneWidget);
   });
 
@@ -44,7 +45,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: LandingScreen(api: api, code: 'ABC123')));
     await tester.pumpAndSettle();
     expect(find.text("Sarah & John's Wedding"), findsOneWidget);
-    expect(find.text('Add Photos'), findsOneWidget);
+    expect(find.text('Join & add photos'), findsOneWidget);
   });
 
   testWidgets('upload screen has the primary and camera actions', (tester) async {
@@ -52,7 +53,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       home: UploadScreen(api: api, eventId: 'evt', title: 'Wedding', code: 'ABC123'),
     ));
-    expect(find.text('Add Photos & Videos'), findsOneWidget);
-    expect(find.text('Shoot & drop'), findsOneWidget);
+    expect(find.text('Add photos & videos'), findsOneWidget);
+    expect(find.text('Take a photo'), findsOneWidget);
   });
 }

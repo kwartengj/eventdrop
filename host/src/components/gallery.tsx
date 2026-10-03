@@ -3,6 +3,17 @@
 import Link from "next/link";
 import type { MediaItem } from "@/lib/types";
 
+function ratio(item: MediaItem) {
+  if (item.width && item.height) return `${item.width} / ${item.height}`;
+  return item.mimeType.startsWith("video/") ? "3 / 4" : "1 / 1";
+}
+
+function duration(item: MediaItem) {
+  if (!item.duration) return "video";
+  const total = Math.round(item.duration);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function GalleryGrid({
   items,
   hrefFor,
@@ -17,18 +28,16 @@ export function GalleryGrid({
   }
   return (
     <div className={dense ? "masonry hostgrid" : "masonry"}>
-      {items.map((item) => (
-        <Link key={item.id} href={hrefFor(item.id)} className="tile">
-          {item.thumbUrl ? (
-            <img src={item.thumbUrl} alt={item.fileName} />
-          ) : (
-            <div className="stripes" style={{ aspectRatio: "1" }} />
-          )}
-          <span className="meta">
-            {item.mimeType.startsWith("video/") ? "Video" : item.contributor?.name || "Photo"}
-          </span>
-        </Link>
-      ))}
+      {items.map((item) => {
+        const video = item.mimeType.startsWith("video/");
+        return (
+          <Link key={item.id} href={hrefFor(item.id)} className="tile" style={{ aspectRatio: ratio(item) }}>
+            {item.thumbUrl ? <img src={item.thumbUrl} alt="" /> : <div className="stripes" style={{ height: "100%" }} />}
+            {video ? <span className="vid">▶ {duration(item)}</span> : null}
+            <span className="meta">{item.contributor?.name || (item.mine ? "You" : "Photo")}</span>
+          </Link>
+        );
+      })}
     </div>
   );
 }

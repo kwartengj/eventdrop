@@ -27,9 +27,17 @@ export default function CreateEventPage() {
   }
 
   return (
-    <HostFrame>
-      <p className="eyebrow">New event</p>
-      <h1 style={{ fontSize: 42 }}>Create event</h1>
+    <HostFrame plain>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <a className="brand" href="/host">
+          <span className="dot" />
+          EventDrop
+        </a>
+        <a className="textbtn" href="/host">
+          Cancel
+        </a>
+      </div>
+      <h1 style={{ fontSize: 40 }}>Create an event</h1>
       <form
         className="stack"
         style={{ maxWidth: 640, marginTop: 18 }}
