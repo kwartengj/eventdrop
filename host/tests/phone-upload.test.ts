@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sha256Bytes } from "@/client/sha256";
+import { pickLanAddress } from "@/server/format";
 import { normalizeMime } from "@/server/files";
 import { clientFacingStorageEndpoint, runWithRequestStorage } from "@/server/storage/request-endpoint";
 
@@ -28,5 +29,18 @@ describe("phone uploads", () => {
 
     const configured = await runWithRequestStorage(phone, async () => clientFacingStorageEndpoint("https://files.example.com"));
     expect(configured).toBe("https://files.example.com");
+  });
+
+  it("picks a same-network address for QR codes", () => {
+    expect(
+      pickLanAddress([
+        { name: "lo", address: "127.0.0.1", internal: true },
+        { name: "docker0", address: "172.17.0.1" },
+        { name: "eth0", address: "172.18.0.4" },
+        { name: "utun0", address: "10.8.0.2" },
+        { name: "en0", address: "192.168.1.42" },
+      ]),
+    ).toBe("192.168.1.42");
+    expect(pickLanAddress([{ name: "eth0", address: "172.18.0.4" }])).toBeNull();
   });
 });

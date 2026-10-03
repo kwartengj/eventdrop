@@ -133,7 +133,7 @@ test("host creates a wedding, three guests upload 50 photos, and download return
   expect(event.joinCode).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
   expect(Number.isInteger(Number(event.joinCode))).toBe(false);
   const url = event.joinUrl as string;
-  expect(url).toBe(`http://localhost:3000/e/${event.joinCode}`);
+  expect(url).toMatch(new RegExp(`/e/${event.joinCode}$`));
   expect(decodeQr(event.qrDataUrl as string)).toBe(url);
 
   const second = await call(createRoute, "POST", "http://localhost/api/events", host, { name: "Other" });

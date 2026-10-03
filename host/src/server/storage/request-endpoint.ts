@@ -21,8 +21,12 @@ function isLoopback(hostname: string) {
  * When storage is configured on loopback and the browser reached the app
  * by another host, sign for that same host on the storage port.
  */
+export function currentRequestHost() {
+  return current.getStore() ?? null;
+}
+
 export function clientFacingStorageEndpoint(configured: string): string {
-  const seen = current.getStore();
+  const seen = hostnameFromHost(current.getStore() || "");
   if (!seen) return configured;
   let base: URL;
   try {
@@ -36,6 +40,8 @@ export function clientFacingStorageEndpoint(configured: string): string {
 }
 
 export function runWithRequestStorage<T>(req: Request, fn: () => Promise<T>): Promise<T> {
-  const header = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").split(",")[0] || "";
-  return current.run(hostnameFromHost(header) || null, fn);
+  const header = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").split(",")[0]?.trim() || "";
+  return current.run(header || null, fn);
 }
+
+export { hostnameFromHost, isLoopback };

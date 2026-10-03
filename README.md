@@ -42,7 +42,7 @@ cp .env.example host/.env
 cd host && npm install && npm run dev
 ```
 
-A phone on the same Wi-Fi can open `http://<your-computer-ip>:3000`. Uploads go straight to MinIO, so port 9000 on that same address has to be reachable too. Signed URLs use that host automatically when the site is not opened as localhost.
+QR codes and the share link use this computer’s network address (for example `http://192.168.1.20:3000/e/ABC123`) whenever `PUBLIC_APP_URL` is localhost, so a phone on the same Wi-Fi can open the event. Uploads still go straight to MinIO, so port 9000 on that same address has to be reachable too. Set `PUBLIC_APP_URL` to a public hostname when you are not on a local network.
 
 ## Guest flow
 
