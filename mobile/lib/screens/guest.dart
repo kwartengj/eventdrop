@@ -31,8 +31,9 @@ class _CodeScreenState extends State<CodeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(22),
+        child: adaptiveBody(
+          ListView(
+          padding: EdgeInsets.fromLTRB(widthPad(context), 16, widthPad(context), 28),
           children: [
             Row(children: [
               const Brand(),
@@ -50,7 +51,7 @@ class _CodeScreenState extends State<CodeScreen> {
               controller: code,
               textCapitalization: TextCapitalization.characters,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontFamily: 'Courier', fontSize: 28, letterSpacing: 6),
+              style: TextStyle(fontFamily: 'Courier', fontSize: MediaQuery.sizeOf(context).width < 380 ? 22 : 28, letterSpacing: MediaQuery.sizeOf(context).width < 380 ? 3 : 6),
               decoration: const InputDecoration(hintText: 'ABC123'),
             ),
             const SizedBox(height: 12),
@@ -73,6 +74,7 @@ class _CodeScreenState extends State<CodeScreen> {
               child: const Text('Hosting? Sign in'),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -129,8 +131,9 @@ class _LandingScreenState extends State<LandingScreen> {
       appBar: AppBar(title: const Brand()),
       body: current == null
           ? Center(child: Text(error ?? 'Finding the event…'))
-          : ListView(
-              padding: const EdgeInsets.all(22),
+          : adaptiveBody(
+              ListView(
+              padding: EdgeInsets.fromLTRB(widthPad(context), 8, widthPad(context), 28),
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(22),
@@ -150,6 +153,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 OutlinedButton(onPressed: () => enter('gallery'), child: const Text('Browse gallery')),
                 if (error != null) Text(error!),
               ],
+            ),
             ),
     );
   }
@@ -252,8 +256,9 @@ class _UploadScreenState extends State<UploadScreen> {
     final done = items.isNotEmpty && items.every((item) => item.status == 'done' || item.status == 'error');
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
-      body: ListView(
-        padding: const EdgeInsets.all(22),
+      body: adaptiveBody(
+        ListView(
+        padding: EdgeInsets.fromLTRB(widthPad(context), 12, widthPad(context), 28),
         children: [
           const Text('Add photos', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
@@ -295,9 +300,12 @@ class _UploadScreenState extends State<UploadScreen> {
           for (final item in items)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: item.mime.startsWith('image/')
-                  ? Image.memory(item.bytes, width: 56, height: 56, fit: BoxFit.cover)
-                  : const Icon(Icons.movie_outlined),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: item.mime.startsWith('image/')
+                    ? Image.memory(item.bytes, width: 56, height: 56, fit: BoxFit.cover)
+                    : const SizedBox(width: 56, height: 56, child: Icon(Icons.movie_outlined)),
+              ),
               title: Text(item.name),
               subtitle: Text(item.error ?? (item.status == 'done' ? 'Uploaded' : item.status == 'uploading' ? 'Uploading' : item.status)),
             ),
@@ -311,6 +319,7 @@ class _UploadScreenState extends State<UploadScreen> {
               child: const Text('View gallery'),
             ),
         ],
+        ),
       ),
     );
   }
@@ -359,9 +368,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
       ),
       body: items.isEmpty
           ? const Center(child: Text('No photos yet.'))
-          : GridView.builder(
+          : adaptiveBody(
+              GridView.builder(
               padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 8, mainAxisSpacing: 8),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: gridCount(MediaQuery.sizeOf(context).width),
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index] as Map<String, dynamic>;
@@ -378,6 +392,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   ),
                 );
               },
+            ),
             ),
     );
   }

@@ -31,11 +31,12 @@ export default function SettingsPage() {
 
   return (
     <HostFrame>
+      <div className="sheet">
       <p className="eyebrow">Event</p>
-      <h1 style={{ fontSize: 42 }}>Settings</h1>
+      <h1>Settings</h1>
       <form
         className="stack"
-        style={{ maxWidth: 680, marginTop: 16 }}
+        style={{ marginTop: 16 }}
         onSubmit={async (submit) => {
           submit.preventDefault();
           const data = await api<{ event: HostEvent }>(`/api/events/${event.id}`, {
@@ -99,7 +100,6 @@ export default function SettingsPage() {
         <label className="row" style={{ justifyContent: "flex-start" }}>
           <input
             type="checkbox"
-            style={{ width: 18 }}
             checked={event.settings.showContributorNames}
             onChange={(e) => setEvent({ ...event, settings: { ...event.settings, showContributorNames: e.target.checked } })}
           />
@@ -108,7 +108,6 @@ export default function SettingsPage() {
         <label className="row" style={{ justifyContent: "flex-start" }}>
           <input
             type="checkbox"
-            style={{ width: 18 }}
             checked={event.settings.uploadsEnabled}
             onChange={(e) => setEvent({ ...event, settings: { ...event.settings, uploadsEnabled: e.target.checked } })}
           />
@@ -117,7 +116,6 @@ export default function SettingsPage() {
         <label className="row" style={{ justifyContent: "flex-start" }}>
           <input
             type="checkbox"
-            style={{ width: 18 }}
             checked={event.settings.videosAllowed}
             onChange={(e) => setEvent({ ...event, settings: { ...event.settings, videosAllowed: e.target.checked } })}
           />
@@ -198,6 +196,7 @@ export default function SettingsPage() {
           {saved ? <span className="ok">{saved}</span> : null}
         </div>
       </form>
+      </div>
     </HostFrame>
   );
 }

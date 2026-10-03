@@ -15,14 +15,16 @@ export default function HostHomePage() {
 
   return (
     <HostFrame>
-      <div className="row">
+      <div className="page-head">
         <div>
           <p className="eyebrow">Your events</p>
-          <h1 style={{ fontSize: 42 }}>Albums</h1>
+          <h1>Albums</h1>
         </div>
-        <Link className="btn" href="/host/events/new">
-          Create event
-        </Link>
+        <div className="toolbar">
+          <Link className="btn" href="/host/events/new">
+            Create event
+          </Link>
+        </div>
       </div>
       <div className="stack" style={{ marginTop: 22 }}>
         {events.length === 0 ? <p className="muted">No events yet. Create one and share the code.</p> : null}

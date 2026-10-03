@@ -28,6 +28,7 @@ export default function CreateEventPage() {
 
   return (
     <HostFrame plain>
+      <div className="sheet">
       <div className="row" style={{ marginBottom: 8 }}>
         <a className="brand" href="/host">
           <span className="dot" />
@@ -37,7 +38,7 @@ export default function CreateEventPage() {
           Cancel
         </a>
       </div>
-      <h1 style={{ fontSize: 40 }}>Create an event</h1>
+      <h1>Create an event</h1>
       <form
         className="stack"
         style={{ maxWidth: 640, marginTop: 18 }}
@@ -129,7 +130,7 @@ export default function CreateEventPage() {
           <input type="number" min={1} max={200} value={form.quotaGb} onChange={(event) => set("quotaGb", Number(event.target.value))} />
         </label>
         <label className="row" style={{ justifyContent: "flex-start" }}>
-          <input type="checkbox" checked={form.videosAllowed} onChange={(event) => set("videosAllowed", event.target.checked)} style={{ width: 18 }} />
+          <input type="checkbox" checked={form.videosAllowed} onChange={(event) => set("videosAllowed", event.target.checked)} />
           Allow videos
         </label>
         {error ? <p className="bad">{error}</p> : null}
@@ -137,6 +138,7 @@ export default function CreateEventPage() {
           Create event
         </button>
       </form>
+      </div>
     </HostFrame>
   );
 }

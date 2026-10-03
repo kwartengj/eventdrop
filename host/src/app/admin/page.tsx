@@ -28,7 +28,7 @@ export default function AdminPage() {
   return (
     <HostFrame>
       <p className="eyebrow">App owner</p>
-      <h1 style={{ fontSize: 42 }}>System</h1>
+      <h1>System</h1>
       {error ? <p className="bad">{error} Sign in as admin@eventdrop.app.</p> : null}
       {data ? (
         <>

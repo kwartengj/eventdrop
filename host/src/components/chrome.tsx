@@ -87,14 +87,22 @@ export function HostFrame({ children, plain = false }: { children: React.ReactNo
     );
   }
 
-  if (plain) return <div style={{ minHeight: "100dvh", background: "var(--bg)", padding: "28px 48px" }}>{children}</div>;
+  if (plain) return <div className="plain">{children}</div>;
 
   const ratio = event ? Math.min(100, (event.quota.usedBytes / Math.max(1, event.quota.quotaBytes)) * 100) : 0;
 
   return (
     <div className="host">
       <aside className="side">
-        <Logo href="/host" />
+        <div className="side-top">
+          <Logo href="/host" />
+          <div className="side-tools">
+            <Link className="btn small" href="/host/events/new">
+              New
+            </Link>
+            <ThemeButton />
+          </div>
+        </div>
         {event ? (
           <Link className="eventcard" href={`/host/events/${event.id}`}>
             <div className={event.coverUrl ? "eventcover" : "eventcover stripes"}>
@@ -131,27 +139,29 @@ export function HostFrame({ children, plain = false }: { children: React.ReactNo
               })
             : null}
         </nav>
-        <div style={{ flex: 1 }} />
-        {event ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 6px" }}>
-            <div className="row" style={{ fontSize: 12 }}>
-              <span style={{ fontWeight: 600 }}>Storage</span>
-              <span className="fine">{event.quota.label}</span>
+        <div className="side-spacer" />
+        <div className="side-foot">
+          {event ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 6px" }}>
+              <div className="row" style={{ fontSize: 12 }}>
+                <span style={{ fontWeight: 600 }}>Storage</span>
+                <span className="fine">{event.quota.label}</span>
+              </div>
+              <div className="quota">
+                <span style={{ width: `${ratio}%` }} />
+              </div>
             </div>
-            <div className="quota">
-              <span style={{ width: `${ratio}%` }} />
-            </div>
+          ) : null}
+          <div className="row" style={{ padding: "0 6px" }}>
+            <Link href="/host/events/new" style={{ fontSize: 13, fontWeight: 600 }}>
+              + New event
+            </Link>
+            <Link href="/admin" style={{ fontSize: 13, color: "var(--mute)" }}>
+              Admin
+            </Link>
           </div>
-        ) : null}
-        <div className="row" style={{ padding: "0 6px" }}>
-          <Link href="/host/events/new" style={{ fontSize: 13, fontWeight: 600 }}>
-            + New event
-          </Link>
-          <Link href="/admin" style={{ fontSize: 13, color: "var(--mute)" }}>
-            Admin
-          </Link>
+          <ThemeButton />
         </div>
-        <ThemeButton />
       </aside>
       <div className="main">{children}</div>
     </div>

@@ -18,7 +18,7 @@ export default function EnterCodePage() {
           <ThemeButton />
         </div>
         <div className="stack" style={{ marginTop: 40, gap: 10 }}>
-          <h1 style={{ fontSize: 36 }}>Join an event</h1>
+          <h1>Join an event</h1>
           <p className="lede">Enter the 6-character code from the invite or poster.</p>
         </div>
         <form

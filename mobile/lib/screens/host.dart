@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../api.dart';
+import '../theme.dart';
 
 class HostLoginScreen extends StatefulWidget {
   const HostLoginScreen({super.key, required this.api});
@@ -21,8 +22,8 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Host sign in')),
-      body: ListView(
-        padding: const EdgeInsets.all(22),
+      body: adaptiveBody(ListView(
+        padding: EdgeInsets.fromLTRB(widthPad(context), 12, widthPad(context), 28),
         children: [
           const Text('Sign in', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
@@ -46,7 +47,7 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
           const SizedBox(height: 8),
           const Text('Demo host: host@eventdrop.app / demo-host-1234'),
         ],
-      ),
+      )),
     );
   }
 }
@@ -69,8 +70,8 @@ class _HostCreateScreenState extends State<HostCreateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create event')),
-      body: ListView(
-        padding: const EdgeInsets.all(22),
+      body: adaptiveBody(ListView(
+        padding: EdgeInsets.fromLTRB(widthPad(context), 12, widthPad(context), 28),
         children: [
           const Text('Create event', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
@@ -99,7 +100,7 @@ class _HostCreateScreenState extends State<HostCreateScreen> {
           ),
           if (error != null) Text(error!),
         ],
-      ),
+      )),
     );
   }
 }
@@ -116,8 +117,8 @@ class HostShareScreen extends StatelessWidget {
     final code = event['joinCode'] as String? ?? '';
     return Scaffold(
       appBar: AppBar(title: const Text('Share')),
-      body: ListView(
-        padding: const EdgeInsets.all(22),
+      body: adaptiveBody(ListView(
+        padding: EdgeInsets.fromLTRB(widthPad(context), 12, widthPad(context), 28),
         children: [
           Text(event['name']?.toString() ?? '', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
@@ -136,7 +137,7 @@ class HostShareScreen extends StatelessWidget {
             child: const Text('Open dashboard'),
           ),
         ],
-      ),
+      )),
     );
   }
 }
@@ -185,9 +186,14 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
             child: Text(counts == null ? 'Loading…' : '${counts['photos']} photos · ${counts['videos']} videos · ${counts['contributors']} contributors'),
           ),
           Expanded(
-            child: GridView.builder(
+            child: adaptiveBody(
+              GridView.builder(
               padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: gridCount(MediaQuery.sizeOf(context).width, tile: 160),
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index] as Map<String, dynamic>;
@@ -197,6 +203,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                   child: thumb == null ? const ColoredBox(color: Color(0xFFD9CFC2)) : Image.network(thumb, fit: BoxFit.cover),
                 );
               },
+            ),
             ),
           ),
         ],

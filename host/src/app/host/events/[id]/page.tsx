@@ -49,15 +49,15 @@ export default function DashboardPage() {
   return (
     <HostFrame>
       <div className="stack" style={{ gap: 22 }}>
-        <div className="row" style={{ alignItems: "flex-end" }}>
+        <div className="page-head">
           <div className="stack" style={{ gap: 8 }}>
             <span className="live-dot">
               <i />
               {event?.status === "active" ? "Live · uploads open" : event?.status || "Gallery"}
             </span>
-            <h1 style={{ fontSize: 34 }}>{event?.name || "Gallery"}</h1>
+            <h1>{event?.name || "Gallery"}</h1>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="toolbar">
             <Link className="btn secondary small" href={`/host/events/${params.id}/share`}>
               Show QR
             </Link>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
         ) : null}
         <div className="dash">
           <div className="stack" style={{ gap: 14 }}>
-            <div className="row">
+            <div className="filters">
               <div className="seg">
                 {[
                   ["", "All"],
@@ -106,7 +106,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               <input type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label="Filter by date" />
-              <input placeholder="Contributor id" value={contributorId} onChange={(event) => setContributorId(event.target.value)} style={{ maxWidth: 180 }} />
+              <input placeholder="Contributor id" value={contributorId} onChange={(event) => setContributorId(event.target.value)} />
             </div>
             <GalleryGrid dense items={items} hrefFor={(id) => `/host/events/${params.id}/view/${id}`} />
           </div>

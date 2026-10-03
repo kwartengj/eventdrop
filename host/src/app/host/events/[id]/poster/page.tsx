@@ -26,12 +26,12 @@ export default function PosterPage() {
           </h1>
           <p style={{ color: "#6f655b", marginTop: 14 }}>{event.name}</p>
           <div style={{ marginTop: 30, padding: 16, background: "#fff", borderRadius: 20 }}>
-            {event.qrDataUrl ? <img className="qr" src={event.qrDataUrl} alt="" style={{ width: 230, height: 230 }} /> : null}
+            {event.qrDataUrl ? <img className="qr" src={event.qrDataUrl} alt="" /> : null}
           </div>
           <p className="fine" style={{ marginTop: 26 }}>
             Event code
           </p>
-          <p className="sharecode" style={{ fontSize: 40, color: "#231d17" }}>
+          <p className="sharecode" style={{ color: "#231d17" }}>
             {event.joinCode}
           </p>
           <p className="fine">or visit {path}</p>
