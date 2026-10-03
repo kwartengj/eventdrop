@@ -19,8 +19,6 @@ export default function UploadPage() {
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [items, setItems] = useState<UploadItem[]>([]);
   const [over, setOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
   const uploader = useRef<ReturnType<typeof createUploader> | null>(null);
 
   useEffect(() => {
@@ -117,12 +115,32 @@ export default function UploadPage() {
           <div className="plus">+</div>
           <strong>Add Photos & Videos</strong>
           <p className="fine">Drop them here, or choose from your camera roll.</p>
-          <button className="btn" type="button" onClick={() => inputRef.current?.click()}>
+          <label className="btn pick">
             Add Photos & Videos
-          </button>
-          <button className="btn secondary" type="button" onClick={() => cameraRef.current?.click()}>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={(event) => {
+                const files = [...(event.target.files || [])];
+                if (files.length) uploader.current?.addFiles(files);
+                event.target.value = "";
+              }}
+            />
+          </label>
+          <label className="btn secondary pick">
             Shoot & drop
-          </button>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              capture="environment"
+              onChange={(event) => {
+                const files = [...(event.target.files || [])];
+                if (files.length) uploader.current?.addFiles(files);
+                event.target.value = "";
+              }}
+            />
+          </label>
         </div>
       ) : null}
 
@@ -176,36 +194,21 @@ export default function UploadPage() {
           <Link className="btn" href={`/e/${params.code}/gallery`}>
             View gallery
           </Link>
-          <button className="btn secondary" type="button" onClick={() => inputRef.current?.click()}>
+          <label className="btn secondary pick">
             Add more
-          </button>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={(event) => {
+                const files = [...(event.target.files || [])];
+                if (files.length) uploader.current?.addFiles(files);
+                event.target.value = "";
+              }}
+            />
+          </label>
         </div>
       ) : null}
-
-      <input
-        ref={inputRef}
-        hidden
-        type="file"
-        accept="image/*,video/*"
-        multiple
-        onChange={(event) => {
-          const files = [...(event.target.files || [])];
-          if (files.length) uploader.current?.addFiles(files);
-          event.target.value = "";
-        }}
-      />
-      <input
-        ref={cameraRef}
-        hidden
-        type="file"
-        accept="image/*,video/*"
-        capture="environment"
-        onChange={(event) => {
-          const files = [...(event.target.files || [])];
-          if (files.length) uploader.current?.addFiles(files);
-          event.target.value = "";
-        }}
-      />
     </GuestFrame>
   );
 }

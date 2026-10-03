@@ -128,7 +128,15 @@ class EventDropApi {
     final put = http.Request('PUT', Uri.parse(presign['url'] as String))
       ..headers.addAll(headers)
       ..bodyBytes = bytes;
-    final stored = await _client.send(put);
+    http.StreamedResponse stored;
+    try {
+      stored = await _client.send(put);
+    } catch (_) {
+      throw ApiException(
+        'This phone could not reach photo storage. Use the same Wi-Fi as the computer, and leave port 9000 open.',
+        0,
+      );
+    }
     if (stored.statusCode >= 300) {
       throw ApiException('Storage rejected the file', stored.statusCode);
     }

@@ -1,5 +1,6 @@
 import { ZodError, ZodSchema } from "zod";
 import { HttpError } from "./errors";
+import { runWithRequestStorage } from "./storage/request-endpoint";
 
 export function json(body: unknown, status = 200, cookies?: string[]) {
   const headers = new Headers();
@@ -66,7 +67,7 @@ export function route(
     try {
       const { bootstrap } = await import("./bootstrap");
       await bootstrap();
-      const result = await fn(req, ctx);
+      const result = await runWithRequestStorage(req, () => fn(req, ctx));
       if (result instanceof Response) return result;
       return json(result.body, result.status ?? 200, result.cookies);
     } catch (error) {

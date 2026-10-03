@@ -167,6 +167,36 @@ class UploadScreen extends StatefulWidget {
   State<UploadScreen> createState() => _UploadScreenState();
 }
 
+String guessMime(XFile file, Uint8List bytes) {
+  final given = file.mimeType?.toLowerCase() ?? '';
+  if (given.isNotEmpty && given != 'application/octet-stream') {
+    if (given == 'image/jpg' || given == 'image/pjpeg') return 'image/jpeg';
+    if (given == 'image/heif') return 'image/heic';
+    return given;
+  }
+  if (bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return 'image/jpeg';
+  if (bytes.length >= 4 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return 'image/png';
+  if (bytes.length >= 4 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) return 'image/gif';
+  if (bytes.length >= 12) {
+    final box = String.fromCharCodes(bytes.sublist(4, 8));
+    if (box == 'ftyp') {
+      final brand = String.fromCharCodes(bytes.sublist(8, 12)).toLowerCase();
+      if (brand.startsWith('hei') || brand.startsWith('mif') || brand.startsWith('msf')) return 'image/heic';
+      if (brand.startsWith('qt')) return 'video/quicktime';
+      return 'video/mp4';
+    }
+  }
+  final name = file.name.toLowerCase();
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.gif')) return 'image/gif';
+  if (name.endsWith('.webp')) return 'image/webp';
+  if (name.endsWith('.heic') || name.endsWith('.heif')) return 'image/heic';
+  if (name.endsWith('.mov')) return 'video/quicktime';
+  if (name.endsWith('.webm')) return 'video/webm';
+  if (name.endsWith('.mp4') || name.endsWith('.m4v')) return 'video/mp4';
+  return 'image/jpeg';
+}
+
 class _UploadItem {
   _UploadItem(this.name, this.bytes, this.mime);
   final String name;
@@ -185,7 +215,7 @@ class _UploadScreenState extends State<UploadScreen> {
     final incoming = <_UploadItem>[];
     for (final file in files) {
       final bytes = await file.readAsBytes();
-      incoming.add(_UploadItem(file.name, bytes, file.mimeType ?? 'image/jpeg'));
+      incoming.add(_UploadItem(file.name.isEmpty ? 'photo' : file.name, bytes, guessMime(file, bytes)));
     }
     if (!mounted) return;
     setState(() {
@@ -233,7 +263,7 @@ class _UploadScreenState extends State<UploadScreen> {
           if (!done)
             FilledButton(
               onPressed: () async {
-                final files = await picker.pickMultiImage();
+                final files = await picker.pickMultipleMedia();
                 if (files.isNotEmpty) await add(files);
               },
               child: const Text('Add Photos & Videos'),
@@ -268,7 +298,9 @@ class _UploadScreenState extends State<UploadScreen> {
           for (final item in items)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Image.memory(item.bytes, width: 56, height: 56, fit: BoxFit.cover),
+              leading: item.mime.startsWith('image/')
+                  ? Image.memory(item.bytes, width: 56, height: 56, fit: BoxFit.cover)
+                  : const Icon(Icons.movie_outlined),
               title: Text(item.name),
               subtitle: Text(item.error ?? (item.status == 'done' ? 'Uploaded' : item.status == 'uploading' ? 'Uploading' : item.status)),
             ),

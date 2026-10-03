@@ -13,6 +13,23 @@ const IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif
 const VIDEO_MIMES = new Set(["video/mp4", "video/quicktime", "video/webm"]);
 const BLOCKED = /\.(exe|bat|cmd|com|sh|bash|js|mjs|cjs|html|htm|php|dll|msi|apk|jar|svg|scr|ps1|dmg|app)$/i;
 
+export function normalizeMime(fileName: string, mime: string) {
+  const lower = mime.toLowerCase().split(";")[0]!.trim();
+  if (lower === "image/jpg" || lower === "image/pjpeg") return "image/jpeg";
+  if (lower === "image/heic-sequence" || lower === "image/heif-sequence" || lower === "image/heif") return "image/heic";
+  if (lower && lower !== "application/octet-stream") return lower;
+  const name = fileName.toLowerCase();
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".gif")) return "image/gif";
+  if (name.endsWith(".webp")) return "image/webp";
+  if (name.endsWith(".heic") || name.endsWith(".heif")) return "image/heic";
+  if (name.endsWith(".mov")) return "video/quicktime";
+  if (name.endsWith(".webm")) return "video/webm";
+  if (name.endsWith(".mp4") || name.endsWith(".m4v")) return "video/mp4";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  return lower || "application/octet-stream";
+}
+
 export function assertAllowedUpload(fileName: string, mime: string, videosAllowed: boolean) {
   const base = fileName.split(/[/\\]/).pop() || fileName;
   if (BLOCKED.test(base) || mime === "image/svg+xml" || mime.startsWith("application/") || mime.startsWith("text/")) {

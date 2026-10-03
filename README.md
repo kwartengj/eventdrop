@@ -42,6 +42,8 @@ cp .env.example host/.env
 cd host && npm install && npm run dev
 ```
 
+A phone on the same Wi-Fi can open `http://<your-computer-ip>:3000`. Uploads go straight to MinIO, so port 9000 on that same address has to be reachable too. Signed URLs use that host automatically when the site is not opened as localhost.
+
 ## Guest flow
 
 1. Host creates an event (name, date, description, cover, privacy, gallery visibility, size limit, videos).

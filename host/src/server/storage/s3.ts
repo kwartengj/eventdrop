@@ -7,6 +7,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { clientFacingStorageEndpoint } from "./request-endpoint";
 import type { PresignPut, StorageKind, StorageProvider } from "./types";
 
 function client(endpoint: string) {
@@ -33,22 +34,34 @@ function missing(error: unknown) {
   return code === "NotFound" || code === "NoSuchKey" || err.$metadata?.httpStatusCode === 404;
 }
 
+const signers = new Map<string, S3Client>();
+
+function signerFor(endpoint: string) {
+  const existing = signers.get(endpoint);
+  if (existing) return existing;
+  const created = client(endpoint);
+  signers.set(endpoint, created);
+  return created;
+}
+
 export class S3StorageProvider implements StorageProvider {
   readonly directUpload = true;
   readonly unavailableReason = null;
   private internal: S3Client;
-  private publicClient: S3Client;
 
   constructor(readonly kind: StorageKind = "minio") {
     const internalEndpoint = process.env.S3_ENDPOINT || "http://localhost:9000";
-    const publicEndpoint = process.env.S3_PUBLIC_ENDPOINT || internalEndpoint;
     this.internal = client(internalEndpoint);
-    this.publicClient = publicEndpoint === internalEndpoint ? this.internal : client(publicEndpoint);
+  }
+
+  private publicSigner() {
+    const configured = process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT || "http://localhost:9000";
+    return signerFor(clientFacingStorageEndpoint(configured));
   }
 
   async presignPut(key: string, mime: string): Promise<PresignPut> {
     const url = await getSignedUrl(
-      this.publicClient,
+      this.publicSigner(),
       new PutObjectCommand({ Bucket: bucket(), Key: key, ContentType: mime }),
       { expiresIn: 60 * 15 },
     );
@@ -61,7 +74,7 @@ export class S3StorageProvider implements StorageProvider {
       Key: key,
       ResponseContentDisposition: opts?.downloadName ? contentDisposition(opts.downloadName) : undefined,
     });
-    return getSignedUrl(this.publicClient, command, { expiresIn: 60 * 10 });
+    return getSignedUrl(this.publicSigner(), command, { expiresIn: 60 * 10 });
   }
 
   async head(key: string) {

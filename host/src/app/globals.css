@@ -146,6 +146,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
 }
 .btn.small { padding: 8px 12px; font-size: 14px; }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pick {
+  position: relative;
+  overflow: hidden;
+}
+.pick input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  font-size: 24px;
+  cursor: pointer;
+}
 .stack { display: grid; gap: 12px; }
 .fine { color: var(--muted); font-size: 13px; margin: 0; }
 .fine a { color: var(--ink); }

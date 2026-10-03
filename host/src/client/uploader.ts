@@ -1,3 +1,4 @@
+import { mimeFromName, mimeFromNameAndBytes, newId, sha256Hex } from "@/client/sha256";
 import { api, ApiError } from "@/lib/api";
 
 export type UploadStatus = "review" | "queued" | "uploading" | "waiting" | "done" | "duplicate" | "error";
@@ -65,9 +66,14 @@ async function idbAll(eventId: string) {
   return rows.filter((row) => row.eventId === eventId);
 }
 
-async function sha256(file: Blob) {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+async function fileMime(file: File) {
+  const declared = (file.type || "").toLowerCase();
+  if (declared && declared !== "application/octet-stream") {
+    return declared === "image/jpg" || declared === "image/pjpeg" ? "image/jpeg" : declared;
+  }
+  const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const sniffed = mimeFromNameAndBytes(file.name, header);
+  return sniffed === "application/octet-stream" ? mimeFromName(file.name) : sniffed;
 }
 
 function putFile(url: string, file: Blob, headers: Record<string, string>, onProgress: (ratio: number) => void) {
@@ -82,7 +88,13 @@ function putFile(url: string, file: Blob, headers: Record<string, string>, onPro
       if (xhr.status >= 200 && xhr.status < 300) resolve();
       else reject(new Error(`Storage rejected the file (${xhr.status})`));
     };
-    xhr.onerror = () => reject(Object.assign(new Error("Waiting for connection"), { offline: true }));
+    xhr.onerror = () => {
+      if (!navigator.onLine) {
+        reject(Object.assign(new Error("Waiting for connection"), { offline: true }));
+        return;
+      }
+      reject(new Error("This phone could not reach photo storage. Stay on the same Wi-Fi as the computer, and leave port 9000 open."));
+    };
     xhr.send(file);
   });
 }
@@ -122,7 +134,9 @@ export function createUploader(eventId: string, onChange: (items: UploadItem[]) 
     item.error = undefined;
     emit();
     try {
-      const fileHash = await sha256(file);
+      const mimeType = await fileMime(file);
+      item.type = mimeType;
+      const fileHash = await sha256Hex(await file.arrayBuffer());
       const presign = await api<{
         duplicate: boolean;
         uploadId: string;
@@ -134,7 +148,7 @@ export function createUploader(eventId: string, onChange: (items: UploadItem[]) 
         body: JSON.stringify({
           eventId,
           fileName: item.name,
-          mimeType: item.type || "application/octet-stream",
+          mimeType,
           fileSize: item.size,
           fileHash,
         }),
@@ -200,7 +214,7 @@ export function createUploader(eventId: string, onChange: (items: UploadItem[]) 
     const reviewing = items.some((item) => item.status === "review");
     const hold = reviewing || list.length >= REVIEW_AT;
     for (const file of list) {
-      const id = crypto.randomUUID();
+      const id = newId();
       const previewUrl = URL.createObjectURL(file);
       files.set(id, file);
       items.push({

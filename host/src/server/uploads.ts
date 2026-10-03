@@ -14,7 +14,7 @@ import {
   usedBytes,
   type EventRecord,
 } from "./events";
-import { assertAllowedUpload, assertMagic, inspectImage, inspectVideo, sha256Buffer } from "./files";
+import { assertAllowedUpload, assertMagic, inspectImage, inspectVideo, normalizeMime, sha256Buffer } from "./files";
 import { safeFileName } from "./format";
 import { activeProvider } from "./storage";
 
@@ -100,7 +100,8 @@ export async function presignUpload(auth: AuthBag, input: unknown) {
   const record = await mustGetEvent(body.eventId);
   const member = await actorForUpload(auth, record);
   assertOpen(record);
-  assertAllowedUpload(body.fileName, body.mimeType, record.settings.videosAllowed);
+  const mimeType = normalizeMime(body.fileName, body.mimeType);
+  assertAllowedUpload(body.fileName, mimeType, record.settings.videosAllowed);
   if (body.fileSize > record.settings.maxUploadBytes) {
     throw new HttpError(400, "That file is larger than this event allows", "TOO_LARGE");
   }
@@ -125,7 +126,7 @@ export async function presignUpload(auth: AuthBag, input: unknown) {
         contributorId: member.id,
         mediaId: existing.id,
         fileName: body.fileName,
-        mimeType: body.mimeType,
+        mimeType,
         fileSize: body.fileSize,
         fileHash: hash,
         status: "duplicate",
@@ -136,14 +137,14 @@ export async function presignUpload(auth: AuthBag, input: unknown) {
   }
 
   const storageKey = `events/${record.event.id}/originals/${randomUUID()}-${safeFileName(body.fileName)}`;
-  const signed = await activeProvider().presignPut(storageKey, body.mimeType, body.fileSize);
+  const signed = await activeProvider().presignPut(storageKey, mimeType, body.fileSize);
   const [upload] = await db
     .insert(uploads)
     .values({
       eventId: record.event.id,
       contributorId: member.id,
       fileName: body.fileName,
-      mimeType: body.mimeType,
+      mimeType,
       fileSize: body.fileSize,
       fileHash: hash,
       storageKey,
@@ -209,17 +210,28 @@ export async function completeUpload(auth: AuthBag, input: unknown) {
     let duration: number | null = null;
     let thumbKey: string | null = null;
     if (upload.mimeType.startsWith("image/")) {
-      const inspected = await inspectImage(buf);
-      width = inspected.width;
-      height = inspected.height;
-      thumbKey = `events/${record.event.id}/thumbs/${upload.id}.jpg`;
-      await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
-    } else {
-      const inspected = await inspectVideo(buf);
-      duration = inspected.duration;
-      if (inspected.thumb) {
+      try {
+        const inspected = await inspectImage(buf);
+        width = inspected.width;
+        height = inspected.height;
         thumbKey = `events/${record.event.id}/thumbs/${upload.id}.jpg`;
         await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
+      } catch {
+        // HEIC and other phone formats may not decode. Keep the original anyway.
+        width = null;
+        height = null;
+        thumbKey = null;
+      }
+    } else {
+      try {
+        const inspected = await inspectVideo(buf);
+        duration = inspected.duration;
+        if (inspected.thumb) {
+          thumbKey = `events/${record.event.id}/thumbs/${upload.id}.jpg`;
+          await provider.putObject(thumbKey, inspected.thumb, "image/jpeg");
+        }
+      } catch {
+        duration = null;
       }
     }
 
