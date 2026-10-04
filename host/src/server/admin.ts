@@ -15,6 +15,19 @@ export async function adminOverview() {
     .where(eq(media.status, "ready"));
   const [recentUploads] = await db.select({ n: count() }).from(uploads).where(gte(uploads.createdAt, dayAgo));
   const [failed] = await db.select({ n: count() }).from(uploads).where(eq(uploads.status, "failed"));
+  const eventRows = await db
+    .select({
+      id: events.id,
+      name: events.name,
+      joinCode: events.joinCode,
+      status: events.status,
+      createdAt: events.createdAt,
+      hostName: users.name,
+      hostEmail: users.email,
+    })
+    .from(events)
+    .innerJoin(users, eq(users.id, events.hostId))
+    .orderBy(desc(events.createdAt));
   const recentFailures = await db
     .select({
       id: uploads.id,
@@ -49,6 +62,7 @@ export async function adminOverview() {
     storageBytes: Number(storage?.n ?? 0),
     uploadsLast24h: Number(recentUploads?.n ?? 0),
     failedUploads: Number(failed?.n ?? 0),
+    events: eventRows,
     recentFailures,
     health: { database, storage: storageHealth },
   };

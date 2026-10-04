@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HostFrame } from "@/components/chrome";
 import { GalleryGrid } from "@/components/gallery";
-import { ago, api } from "@/lib/api";
+import { ago, api, ApiError } from "@/lib/api";
 import type { HostEvent, MediaItem } from "@/lib/types";
 
 type Activity = { id: string; fileName: string; mimeType: string; status: string; createdAt: string; name: string };
 
 export default function DashboardPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [event, setEvent] = useState<HostEvent | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [items, setItems] = useState<MediaItem[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [type, setType] = useState("");
@@ -67,8 +70,30 @@ export default function DashboardPage() {
             <Link className="btn small" href={`/host/events/${params.id}/downloads`}>
               Download all
             </Link>
+            <button
+              className="btn danger small"
+              type="button"
+              disabled={deleting || !event}
+              onClick={() => {
+                if (!event) return;
+                if (!window.confirm(`Delete "${event.name}"? The join code stops working and every photo in it is removed. This cannot be undone.`)) {
+                  return;
+                }
+                setDeleting(true);
+                setDeleteError("");
+                api(`/api/events/${event.id}`, { method: "DELETE" })
+                  .then(() => router.push("/host"))
+                  .catch((err) => {
+                    setDeleteError(err instanceof ApiError ? err.message : "Could not delete the event");
+                    setDeleting(false);
+                  });
+              }}
+            >
+              {deleting ? "Deleting…" : "Delete event"}
+            </button>
           </div>
         </div>
+        {deleteError ? <p className="bad">{deleteError}</p> : null}
         {event ? (
           <div className="stats">
             <div className="card stat">
