@@ -92,7 +92,15 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   Map<String, dynamic>? event;
   final name = TextEditingController();
+  final message = TextEditingController();
   String? error;
+
+  @override
+  void dispose() {
+    name.dispose();
+    message.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -107,8 +115,12 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Future<void> enter(String next) async {
+    if (name.text.trim().isEmpty) {
+      setState(() => error = 'Add your name');
+      return;
+    }
     try {
-      final joined = await widget.api.join(widget.code, displayName: name.text);
+      final joined = await widget.api.join(widget.code, displayName: name.text, message: message.text);
       final id = (joined['event'] as Map<String, dynamic>)['id'] as String;
       if (!mounted) return;
       final title = (joined['event'] as Map<String, dynamic>)['name'] as String? ?? 'Event';
@@ -143,9 +155,25 @@ class _LandingScreenState extends State<LandingScreen> {
                 const SizedBox(height: 8),
                 Text(current['hostName']?.toString() ?? ''),
                 const SizedBox(height: 16),
-                TextField(controller: name, decoration: const InputDecoration(labelText: 'Your name (optional)')),
+                TextField(
+                  controller: name,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(labelText: 'Your name'),
+                  onChanged: (_) => setState(() {}),
+                ),
                 const SizedBox(height: 12),
-                FilledButton(onPressed: current['uploadsOpen'] == false ? null : () => enter('upload'), child: const Text('Join & add photos')),
+                TextField(
+                  controller: message,
+                  minLines: 2,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Leave a message (optional)'),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: current['uploadsOpen'] == false || name.text.trim().isEmpty ? null : () => enter('upload'),
+                  child: const Text('Join & add photos'),
+                ),
                 const SizedBox(height: 8),
                 OutlinedButton(onPressed: () => enter('gallery'), child: const Text('Browse gallery')),
                 if (error != null) Text(error!),

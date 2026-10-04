@@ -45,6 +45,8 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: LandingScreen(api: api, code: 'ABC123')));
     await tester.pumpAndSettle();
     expect(find.text("Sarah & John's Wedding"), findsOneWidget);
+    expect(find.text('Your name'), findsOneWidget);
+    expect(find.text('Leave a message (optional)'), findsOneWidget);
     expect(find.text('Join & add photos'), findsOneWidget);
   });
 

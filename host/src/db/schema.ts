@@ -210,6 +210,24 @@ export const sessions = pgTable(
   (t) => [index("sessions_user_idx").on(t.userId), index("sessions_attendee_idx").on(t.attendeeSessionId)],
 );
 
+export const guestMessages = pgTable(
+  "guest_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    attendeeSessionId: uuid("attendee_session_id")
+      .notNull()
+      .unique()
+      .references(() => attendeeSessions.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("guest_messages_event_idx").on(t.eventId, t.createdAt)],
+);
+
 export const joinAttempts = pgTable(
   "join_attempts",
   {

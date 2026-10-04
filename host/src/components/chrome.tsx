@@ -45,6 +45,7 @@ export function GuestFrame({ children }: { children: React.ReactNode }) {
 const links = [
   { href: "", label: "Gallery" },
   { href: "/contributors", label: "Contributors" },
+  { href: "/messages", label: "Messages" },
   { href: "/downloads", label: "Downloads" },
   { href: "/settings", label: "Settings" },
   { href: "/live", label: "Live mode" },
@@ -121,7 +122,9 @@ export function HostFrame({ children, plain = false }: { children: React.ReactNo
                     ? String(event.counts.photos + event.counts.videos)
                     : link.href === "/contributors" && event
                       ? String(event.counts.contributors)
-                      : "";
+                      : link.href === "/messages" && event
+                        ? String(event.counts.messages)
+                        : "";
                 return (
                   <Link key={link.label} className={active ? "active" : ""} href={href}>
                     <span>{link.label}</span>

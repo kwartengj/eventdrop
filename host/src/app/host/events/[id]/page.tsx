@@ -108,6 +108,10 @@ export default function DashboardPage() {
               <b>{event.counts.contributors}</b>
               <span>contributors</span>
             </div>
+            <Link className="card stat" href={`/host/events/${params.id}/messages`}>
+              <b>{event.counts.messages}</b>
+              <span>messages</span>
+            </Link>
             <div className="card stat">
               <b style={{ fontSize: 22 }}>{event.quota.label}</b>
               <div className="quota">
