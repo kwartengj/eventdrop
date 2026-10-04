@@ -10,12 +10,12 @@ services:
     environment:
       DATABASE_URL: postgres://eventdrop:eventdrop@postgres:5432/eventdrop
       S3_ENDPOINT: http://minio:9000
-      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_PUBLIC_ENDPOINT: http://eventdrop-env.eba-pvpk2xmu.eu-north-1.elasticbeanstalk.com/:9000
       S3_REGION: us-east-1
       S3_BUCKET: eventdrop
       S3_ACCESS_KEY: eventdrop
       S3_SECRET_KEY: eventdrop-secret
-      PUBLIC_APP_URL: http://localhost:3000  #replace this with network ip of the host
+      PUBLIC_APP_URL: http://eventdrop-env.eba-pvpk2xmu.eu-north-1.elasticbeanstalk.com/:3000  #replace this with network ip of the host
       SESSION_DAYS: "30"
       COOKIE_SECURE: "false"
     depends_on:
