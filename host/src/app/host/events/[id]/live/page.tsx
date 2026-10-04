@@ -61,11 +61,13 @@ export default function LivePage() {
       {!enabled ? <p>Live mode is off. Turn it on for a projector slideshow.</p> : null}
       {enabled && !item ? <p>Waiting for the first photo.</p> : null}
       {enabled && item ? (
-        item.mimeType.startsWith("video/") ? (
-          <video key={item.id} src={item.url} autoPlay muted playsInline />
-        ) : (
-          <img key={item.id} src={item.url} alt={item.fileName} />
-        )
+        <div className="live-stage">
+          {item.mimeType.startsWith("video/") ? (
+            <video key={item.id} src={item.url} autoPlay muted playsInline />
+          ) : (
+            <img key={item.id} src={item.url} alt={item.fileName} />
+          )}
+        </div>
       ) : null}
     </div>
   );

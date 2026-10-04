@@ -420,9 +420,36 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .poster .kicker { font-family: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.18em; font-weight: 600; color: oklch(0.5 0.15 36); font-size: 13px; }
 .poster h1 { font-size: 46px; margin-top: 16px; }
-.live { min-height: 100dvh; background: #0f0c09; color: #f3ece2; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.live-stage { flex: 1; display: grid; place-items: center; }
-.live-stage img, .live-stage video { max-height: 70vh; border-radius: 18px; }
+.live {
+  height: 100dvh;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #0f0c09;
+  color: #f3ece2;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.live-controls { display: flex; flex-wrap: wrap; gap: 10px; flex: none; }
+.live-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.live-stage img, .live-stage video {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  flex: none;
+  border-radius: 18px;
+}
 
 @media (max-width: 900px) {
   .host { flex-direction: column; }
