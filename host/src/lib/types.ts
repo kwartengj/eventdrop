@@ -27,7 +27,7 @@ export type HostEvent = {
   status: string;
   coverUrl: string | null;
   qrDataUrl?: string;
-  counts: { photos: number; videos: number; contributors: number };
+  counts: { photos: number; videos: number; contributors: number; messages: number };
   quota: { usedBytes: number; quotaBytes: number; label: string };
   settings: {
     galleryVisibility: string;

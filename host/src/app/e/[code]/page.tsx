@@ -12,6 +12,7 @@ export default function LandingPage() {
   const code = params.code;
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -25,9 +26,17 @@ export default function LandingPage() {
   }, [code, router]);
 
   async function enter() {
+    if (!name.trim()) {
+      setError("Add your name");
+      return;
+    }
     setError("");
     try {
-      await api(`/api/join/${code}`, { method: "POST", body: JSON.stringify({ displayName: name }) }, "guest");
+      await api(
+        `/api/join/${code}`,
+        { method: "POST", body: JSON.stringify({ displayName: name.trim(), message: message.trim() }) },
+        "guest",
+      );
       router.push(`/e/${code}/upload`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not join");
@@ -53,16 +62,42 @@ export default function LandingPage() {
               <h1 style={{ fontSize: 34 }}>{event.name}</h1>
               {when ? <span style={{ fontSize: 15, color: "var(--mute)" }}>{when}</span> : null}
             </div>
-            <label style={{ marginTop: 6 }}>
-              <span>
-                Your name <span style={{ color: "var(--mute)", fontWeight: 400 }}>(optional)</span>
-              </span>
-              <input value={name} placeholder="So the couple knows who shared" onChange={(e) => setName(e.target.value)} />
-            </label>
-            {error ? <p className="bad">{error}</p> : null}
-            <button className="btn block" type="button" disabled={!event.uploadsOpen} onClick={enter} style={{ fontSize: 18, padding: 19 }}>
-              Join &amp; add photos
-            </button>
+            <form
+              className="stack"
+              style={{ gap: 18 }}
+              onSubmit={(ev) => {
+                ev.preventDefault();
+                void enter();
+              }}
+            >
+              <label>
+                <span>Your name</span>
+                <input
+                  value={name}
+                  required
+                  maxLength={80}
+                  autoComplete="name"
+                  placeholder="So the couple knows who shared"
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>
+                  Leave a message <span style={{ color: "var(--mute)", fontWeight: 400 }}>(optional)</span>
+                </span>
+                <textarea
+                  value={message}
+                  maxLength={400}
+                  rows={3}
+                  placeholder="A note they can keep and frame"
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+              </label>
+              {error ? <p className="bad">{error}</p> : null}
+              <button className="btn block" type="submit" disabled={!event.uploadsOpen || !name.trim()} style={{ fontSize: 18, padding: 19 }}>
+                Join &amp; add photos
+              </button>
+            </form>
             {!event.uploadsOpen ? <p className="fine">Uploads are closed for this event. You can still look if the host left the gallery open.</p> : null}
             <p className="fine" style={{ textAlign: "center" }}>
               No account or app needed. Only people with this link or code can see the event.

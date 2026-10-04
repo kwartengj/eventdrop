@@ -357,11 +357,12 @@ textarea { resize: vertical; min-height: 72px; }
 .eventcover { height: 84px; border-radius: 10px; background: var(--fill); overflow: hidden; }
 .eventcover img { width: 100%; height: 100%; object-fit: cover; }
 .main { flex: 1; min-width: 0; overflow: auto; padding: 28px 32px 36px; }
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .card {
   background: var(--card); border-radius: 16px; padding: 16px 18px;
   box-shadow: var(--shadow); color: inherit;
 }
+a.card { text-decoration: none; color: inherit; }
 .stat { display: flex; flex-direction: column; gap: 4px; }
 .stat b { font-size: 30px; letter-spacing: -0.03em; }
 .stat span, .card .fine { font-size: 13px; color: var(--mute); }
@@ -449,6 +450,38 @@ textarea { resize: vertical; min-height: 72px; }
   object-fit: contain;
   flex: none;
   border-radius: 18px;
+}
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.export-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.guestbook {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.note {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 20px 20px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 168px;
+}
+.note p {
+  margin: 0;
+  font-family: Georgia, "Iowan Old Style", Palatino, "Palatino Linotype", serif;
+  font-size: 18px;
+  line-height: 1.45;
+  font-style: italic;
+}
+.note footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
 }
 
 @media (max-width: 900px) {

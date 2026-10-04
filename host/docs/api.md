@@ -58,7 +58,17 @@ Create body (all optional except `name`):
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/api/join/:code` | Public preview. Failed guesses are rate-limited (20 / 10 minutes / IP). |
-| POST | `/api/join/:code` | `{ displayName? }`. Sets `ed_guest` and returns `{ token, event }`. No account. |
+| POST | `/api/join/:code` | `{ displayName, message? }`. `displayName` is required once the code matches an event (max 80). `message` is optional (max 400) and is stored as that guest's guestbook note. Sets `ed_guest` and returns `{ token, event }`. No account. A code that matches nothing stays a 404. |
+
+## Messages
+
+Hosts (and admins) only.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/api/events/:id/messages` | `{ event, messages: [{ id, name, message, createdAt }] }` in the order they were left. Guests who joined without a note are omitted. |
+| GET | `/api/events/:id/messages/export?format=pdf` | A framed guestbook PDF, one printable sheet per page, for a wall or picture frame. |
+| GET | `/api/events/:id/messages/export?format=xlsx` | Workbook with columns `Name` and `Message`. |
 
 Codes are 6 characters from a 32-character alphabet. They are not sequential integers.
 

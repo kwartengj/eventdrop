@@ -8,6 +8,7 @@ import {
   eventMembers,
   eventSettings,
   events,
+  guestMessages,
   joinAttempts,
   media,
   mediaCredits,
@@ -276,21 +277,27 @@ export async function previewByCode(code: string, ip: string, guest: GuestContex
   return { event: await presentPublic(record), joined, displayName: joined ? guest?.displayName : null };
 }
 
-export async function joinByCode(code: string, displayName: string | undefined, ip: string, guest: GuestContext | null) {
+export async function joinByCode(
+  code: string,
+  displayName: string | undefined,
+  ip: string,
+  guest: GuestContext | null,
+  message?: string,
+) {
   const record = await findByCode(code, ip);
   if (record.event.status === "archived") throw new HttpError(403, "This event has been archived", "ARCHIVED");
+  const name = displayName?.trim() ?? "";
+  if (!name) throw new HttpError(400, "Add your name", "VALIDATION");
   if (guest?.eventId === record.event.id) {
-    const name = displayName?.trim();
-    if (name) await renameGuest(guest, name);
-    const refreshed = name ? { ...guest, displayName: name } : guest;
+    await renameGuest(guest, name);
+    await keepMessage(record.event.id, guest.sessionId, name, message);
     return {
       alreadyJoined: true,
       token: null as string | null,
       event: await presentPublic(record),
-      displayName: refreshed.displayName,
+      displayName: name,
     };
   }
-  const name = displayName?.trim() || "Guest";
   const [session] = await db
     .insert(attendeeSessions)
     .values({ eventId: record.event.id, displayName: name })
@@ -302,6 +309,7 @@ export async function joinByCode(code: string, displayName: string | undefined, 
     displayName: name,
     role: "attendee",
   });
+  await keepMessage(record.event.id, session.id, name, message);
   const token = await issueToken({ attendeeSessionId: session.id });
   return { alreadyJoined: false, token, event: await presentPublic(record), displayName: name };
 }
@@ -311,9 +319,30 @@ export async function joinById(
   displayName: string | undefined,
   ip: string,
   guest: GuestContext | null,
+  message?: string,
 ) {
   const record = await mustGetEvent(eventId);
-  return joinByCode(record.event.joinCode, displayName, ip, guest);
+  return joinByCode(record.event.joinCode, displayName, ip, guest, message);
+}
+
+async function keepMessage(eventId: string, sessionId: string, name: string, message: string | undefined) {
+  const body = message?.trim();
+  if (!body) return;
+  const [existing] = await db
+    .select({ id: guestMessages.id })
+    .from(guestMessages)
+    .where(eq(guestMessages.attendeeSessionId, sessionId))
+    .limit(1);
+  if (existing) {
+    await db.update(guestMessages).set({ displayName: name, body }).where(eq(guestMessages.id, existing.id));
+    return;
+  }
+  await db.insert(guestMessages).values({
+    eventId,
+    attendeeSessionId: sessionId,
+    displayName: name,
+    body,
+  });
 }
 
 async function renameGuest(guest: GuestContext, name: string) {
@@ -348,10 +377,12 @@ export async function countsFor(eventId: string) {
     .from(mediaCredits)
     .innerJoin(media, eq(media.id, mediaCredits.mediaId))
     .where(and(eq(media.eventId, eventId), eq(media.status, "ready")));
+  const [notes] = await db.select({ n: count() }).from(guestMessages).where(eq(guestMessages.eventId, eventId));
   return {
     photos: Number(photos?.n ?? 0),
     videos: Number(videos?.n ?? 0),
     contributors: Number(people?.n ?? 0),
+    messages: Number(notes?.n ?? 0),
   };
 }
 

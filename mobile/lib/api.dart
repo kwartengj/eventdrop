@@ -88,9 +88,10 @@ class EventDropApi {
     return send('GET', '/api/join/${normalizeCode(code)}', guest: true);
   }
 
-  Future<Map<String, dynamic>> join(String code, {String? displayName}) async {
+  Future<Map<String, dynamic>> join(String code, {String? displayName, String? message}) async {
     final data = await send('POST', '/api/join/${normalizeCode(code)}', guest: true, body: {
       if (displayName != null && displayName.trim().isNotEmpty) 'displayName': displayName.trim(),
+      if (message != null && message.trim().isNotEmpty) 'message': message.trim(),
     });
     final token = data['token'] as String?;
     if (token != null) guestToken = token;
