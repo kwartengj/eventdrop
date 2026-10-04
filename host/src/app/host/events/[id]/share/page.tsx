@@ -30,25 +30,25 @@ export default function SharePage() {
 
   return (
     <HostFrame plain>
-      <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 24px", gap: 28 }}>
+      <div className="share-stage">
         <Logo href="/host" />
         <div style={{ textAlign: "center" }}>
           <span className="live-dot" style={{ justifyContent: "center" }}>
             <i style={{ animation: "none" }} />
             Your event is ready
           </span>
-          <h1 style={{ fontSize: 44, marginTop: 10 }}>{event.name}</h1>
+          <h1 style={{ marginTop: 10 }}>{event.name}</h1>
         </div>
         <div className="created">
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, borderRight: "1px solid var(--line)" }}>
+          <div>
             {event.qrDataUrl ? <img className="qr" src={event.qrDataUrl} alt={`QR code for ${event.joinUrl}`} /> : <div className="qr stripes" />}
             <b>Scan to share your photos</b>
           </div>
           <div>
             <div className="fine">Join code</div>
             <p className="sharecode">{event.joinCode}</p>
-            <div className="row" style={{ padding: "6px 6px 6px 14px", borderRadius: 13, background: "var(--bg)", border: "1px solid var(--line)" }}>
-              <span className="mono" style={{ fontSize: 14 }}>
+            <div className="urlchip">
+              <span className="mono">
                 {path}
               </span>
               <button
@@ -63,7 +63,7 @@ export default function SharePage() {
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
-            <div className="pair" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div className="actions-3">
               <button
                 className="btn secondary small"
                 type="button"

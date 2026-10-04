@@ -34,19 +34,67 @@ ThemeData eventDropTheme({required Brightness brightness}) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: dark ? const Color(0xFF2A241E) : const Color(0xFFF6F1EA),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      fillColor: dark ? const Color(0xFF2A241E) : card,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: dark ? const Color(0x22F3ECE2) : const Color(0x33231D17)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: coral, width: 1.6),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: coral,
         foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(58),
+        minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
       ),
     ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        side: BorderSide(color: dark ? const Color(0x33F3ECE2) : const Color(0x33231D17)),
+        foregroundColor: dark ? inkDark : ink,
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      color: dark ? cardDark : card,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
   );
+}
+
+/// Keeps phone layouts full-bleed and centers a readable column on tablets and wide windows.
+Widget adaptiveBody(Widget child, {double maxWidth = 640}) {
+  return Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: child,
+    ),
+  );
+}
+
+double widthPad(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  if (width < 380) return 16;
+  if (width > 840) return 28;
+  return 22;
+}
+
+int gridCount(double width, {double tile = 180}) {
+  final count = (width / tile).floor();
+  if (count < 2) return 2;
+  if (count > 6) return 6;
+  return count;
 }
 
 class Brand extends StatelessWidget {

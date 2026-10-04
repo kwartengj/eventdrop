@@ -1,6 +1,8 @@
 services:
   app:
-    build: ./host
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "80:3000"
     environment:

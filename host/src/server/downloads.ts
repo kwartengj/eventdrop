@@ -104,8 +104,12 @@ async function processJob(jobId: string) {
             let name = `${folder}/${safeFileName(row.name)}-${safeFileName(row.item.fileName)}`;
             if (used.has(name)) name = `${folder}/${row.item.id.slice(0, 8)}-${safeFileName(row.item.fileName)}`;
             used.add(name);
-            const body = await provider.getObject(row.item.storageKey);
-            archive.append(body, { name });
+            const body = await provider.openObject(row.item.storageKey);
+            await new Promise<void>((entryDone, entryFail) => {
+              body.on("error", entryFail);
+              archive.once("entry", () => entryDone());
+              archive.append(body, { name });
+            });
           }
           await archive.finalize();
         } catch (error) {

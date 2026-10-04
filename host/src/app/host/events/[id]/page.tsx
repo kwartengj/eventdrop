@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HostFrame } from "@/components/chrome";
-import { GalleryGrid } from "@/components/gallery";
+import { GalleryGrid, mergeGallery } from "@/components/gallery";
 import { ago, api } from "@/lib/api";
 import type { HostEvent, MediaItem } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let stop = false;
+    let cursor = "";
     async function load() {
       const [eventRes, activityRes] = await Promise.all([
         api<{ event: HostEvent }>(`/api/events/${params.id}`),
@@ -33,8 +34,13 @@ export default function DashboardPage() {
       if (type) query.set("type", type);
       if (contributorId) query.set("contributorId", contributorId);
       if (date) query.set("date", date);
+      if (cursor) query.set("since", cursor);
       const media = await api<{ items: MediaItem[] }>(`/api/events/${params.id}/media?${query}`);
-      if (!stop) setItems(media.items);
+      if (stop) return;
+      const newest = media.items.find((item) => item.uploadedAt)?.uploadedAt;
+      if (!cursor) setItems(media.items);
+      else setItems((current) => mergeGallery(media.items, current));
+      if (newest && (!cursor || newest > cursor)) cursor = newest;
     }
     void load();
     const timer = window.setInterval(() => void load(), 5000);
@@ -49,15 +55,15 @@ export default function DashboardPage() {
   return (
     <HostFrame>
       <div className="stack" style={{ gap: 22 }}>
-        <div className="row" style={{ alignItems: "flex-end" }}>
+        <div className="page-head">
           <div className="stack" style={{ gap: 8 }}>
             <span className="live-dot">
               <i />
               {event?.status === "active" ? "Live · uploads open" : event?.status || "Gallery"}
             </span>
-            <h1 style={{ fontSize: 34 }}>{event?.name || "Gallery"}</h1>
+            <h1>{event?.name || "Gallery"}</h1>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="toolbar">
             <Link className="btn secondary small" href={`/host/events/${params.id}/share`}>
               Show QR
             </Link>
@@ -93,7 +99,7 @@ export default function DashboardPage() {
         ) : null}
         <div className="dash">
           <div className="stack" style={{ gap: 14 }}>
-            <div className="row">
+            <div className="filters">
               <div className="seg">
                 {[
                   ["", "All"],
@@ -106,7 +112,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               <input type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label="Filter by date" />
-              <input placeholder="Contributor id" value={contributorId} onChange={(event) => setContributorId(event.target.value)} style={{ maxWidth: 180 }} />
+              <input placeholder="Contributor id" value={contributorId} onChange={(event) => setContributorId(event.target.value)} />
             </div>
             <GalleryGrid dense items={items} hrefFor={(id) => `/host/events/${params.id}/view/${id}`} />
           </div>

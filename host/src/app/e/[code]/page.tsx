@@ -50,7 +50,7 @@ export default function LandingPage() {
               <span className="mono" style={{ fontSize: 12, letterSpacing: "0.06em", color: "var(--accent-text)", textTransform: "uppercase" }}>
                 You&apos;re invited to add photos
               </span>
-              <h1 style={{ fontSize: 34 }}>{event.name}</h1>
+              <h1>{event.name}</h1>
               {when ? <span style={{ fontSize: 15, color: "var(--mute)" }}>{when}</span> : null}
             </div>
             <label style={{ marginTop: 6 }}>

@@ -13,6 +13,7 @@ export default function LoginPage() {
 
   return (
     <GuestFrame>
+      <div className="guest-pad">
       <div className="stack">
         <p className="eyebrow">Host</p>
         <h1>Sign in</h1>
@@ -45,6 +46,7 @@ export default function LoginPage() {
         </button>
         <p className="fine">Demo host: host@eventdrop.app / demo-host-1234</p>
       </form>
+      </div>
     </GuestFrame>
   );
 }

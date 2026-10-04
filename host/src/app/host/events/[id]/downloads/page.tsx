@@ -50,12 +50,12 @@ export default function DownloadsPage() {
     <HostFrame>
       <div className="stack" style={{ gap: 22, maxWidth: 900 }}>
         <div>
-          <h1 style={{ fontSize: 34 }}>Download</h1>
+          <h1>Download</h1>
           <p className="lede" style={{ marginTop: 8 }}>
             Archives are packed on the server. Large ones run in the background until they are ready.
           </p>
         </div>
-        <div className="stats" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+        <div className="stats thirds">
           {cards.map(([scope, title, meta]) => (
             <div key={scope} className="card stack" style={{ gap: 16 }}>
               <div>
