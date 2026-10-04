@@ -61,6 +61,25 @@ function thisMachineLanIp() {
   return pickLanAddress(found);
 }
 
+function isLanHost(hostname: string) {
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(hostname);
+}
+
+/** Public sites are on port 80 or 443. :3000 is only the port inside the container. */
+function shareHost(hostHeader: string) {
+  const hostname = hostnameFromHost(hostHeader);
+  const port = hostHeader.startsWith("[")
+    ? hostHeader.includes("]:")
+      ? hostHeader.slice(hostHeader.indexOf("]:") + 2)
+      : ""
+    : hostHeader.includes(":")
+      ? hostHeader.slice(hostHeader.lastIndexOf(":") + 1)
+      : "";
+  if (!port || port === "80" || port === "443") return hostname;
+  if (port === "3000" && !isLanHost(hostname)) return hostname;
+  return hostHeader.startsWith("[") ? hostHeader : `${hostname}:${port}`;
+}
+
 /** Origin encoded in QR codes and share links. */
 export function advertiseOrigin() {
   const configured = (process.env.PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -70,7 +89,7 @@ export function advertiseOrigin() {
   } catch {
     return configured;
   }
-  if (!isLoopback(url.hostname)) return configured;
+  if (!isLoopback(url.hostname)) return `${url.protocol}//${shareHost(url.host)}`;
 
   const port = url.port || (url.protocol === "https:" ? "443" : "80");
   const lan = thisMachineLanIp();
@@ -78,13 +97,7 @@ export function advertiseOrigin() {
 
   const seen = currentRequestHost();
   const hostname = hostnameFromHost(seen || "");
-  if (hostname && !isLoopback(hostname)) {
-    const hasPort = seen?.startsWith("[") ? seen.includes("]:") : (seen || "").includes(":");
-    // A public host with no port arrived on 80 or 443. Do not append the
-    // local dev port from PUBLIC_APP_URL, or share links miss the site.
-    if (hasPort) return `${url.protocol}//${seen}`;
-    return `${url.protocol}//${hostname}`;
-  }
+  if (hostname && !isLoopback(hostname)) return `${url.protocol}//${shareHost(seen || hostname)}`;
   return configured;
 }
 

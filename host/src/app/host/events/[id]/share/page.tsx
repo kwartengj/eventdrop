@@ -47,10 +47,8 @@ export default function SharePage() {
           <div>
             <div className="fine">Join code</div>
             <p className="sharecode">{event.joinCode}</p>
-            <div className="row" style={{ padding: "6px 6px 6px 14px", borderRadius: 13, background: "var(--bg)", border: "1px solid var(--line)" }}>
-              <span className="mono" style={{ fontSize: 14 }}>
-                {path}
-              </span>
+            <div className="share-url">
+              <span className="mono">{path}</span>
               <button
                 className="btn small"
                 type="button"

@@ -29,6 +29,21 @@ describe("share links on a public host", () => {
     }
   });
 
+  it("drops :3000 from a public site url, including the one encoded in the QR", async () => {
+    const previous = process.env.PUBLIC_APP_URL;
+    process.env.PUBLIC_APP_URL = "http://eventdrop-env.eba-example.eu-north-1.elasticbeanstalk.com:3000";
+    try {
+      const req = new Request("http://eventdrop-env.eba-example.eu-north-1.elasticbeanstalk.com/", {
+        headers: { host: "eventdrop-env.eba-example.eu-north-1.elasticbeanstalk.com:3000" },
+      });
+      const origin = await runWithRequestStorage(req, async () => advertiseOrigin());
+      expect(origin).toBe("http://eventdrop-env.eba-example.eu-north-1.elasticbeanstalk.com");
+    } finally {
+      if (previous === undefined) delete process.env.PUBLIC_APP_URL;
+      else process.env.PUBLIC_APP_URL = previous;
+    }
+  });
+
   it("keeps an explicit port from the browser", async () => {
     const previous = process.env.PUBLIC_APP_URL;
     process.env.PUBLIC_APP_URL = "http://localhost:3000";

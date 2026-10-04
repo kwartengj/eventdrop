@@ -381,8 +381,26 @@ textarea { resize: vertical; min-height: 72px; }
 .created {
   display: flex; background: var(--card); border-radius: 28px; box-shadow: var(--shadow); overflow: hidden;
 }
-.created > div { padding: 32px; }
+.created > div { padding: 32px; min-width: 0; }
 .created > div + div { border-left: 1px solid var(--line); width: 420px; display: flex; flex-direction: column; gap: 18px; }
+.share-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 6px 6px 14px;
+  border-radius: 13px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.share-url .mono {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  font-size: 13px;
+}
+.share-url .btn { flex: none; }
 
 .poster-page { min-height: 100dvh; display: flex; background: var(--fill); }
 .poster-side {
