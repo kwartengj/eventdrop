@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gte, ilike, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, lt, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { z } from "zod";
 import { db } from "../db/client";
 import {
   attendeeSessions,
+  downloadJobs,
   eventMembers,
   eventSettings,
   events,
@@ -187,6 +188,43 @@ export async function updateEvent(user: { id: string; role: string }, id: string
     await db.update(eventSettings).set(settingsPatch).where(eq(eventSettings.eventId, id));
   }
   return presentEvent(await mustGetEvent(id), true);
+}
+
+export async function deleteEvent(user: { id: string; role: string }, id: string) {
+  const record = await mustGetEvent(id);
+  assertHost(user, record);
+
+  const keys = new Set<string>();
+  await db.transaction(async (tx) => {
+    const [locked] = await tx.select({ id: events.id }).from(events).where(eq(events.id, id)).for("update");
+    if (!locked) throw new HttpError(404, "Event not found", "NOT_FOUND");
+
+    if (record.event.coverStorageKey) keys.add(record.event.coverStorageKey);
+    const files = await tx
+      .select({ storageKey: media.storageKey, thumbKey: media.thumbKey })
+      .from(media)
+      .where(eq(media.eventId, id));
+    const pending = await tx.select({ storageKey: uploads.storageKey }).from(uploads).where(eq(uploads.eventId, id));
+    const jobs = await tx.select({ storageKey: downloadJobs.storageKey }).from(downloadJobs).where(eq(downloadJobs.eventId, id));
+    for (const file of files) {
+      keys.add(file.storageKey);
+      if (file.thumbKey) keys.add(file.thumbKey);
+    }
+    for (const row of pending) if (row.storageKey) keys.add(row.storageKey);
+    for (const job of jobs) if (job.storageKey) keys.add(job.storageKey);
+
+    const members = await tx.select({ id: eventMembers.id }).from(eventMembers).where(eq(eventMembers.eventId, id));
+    const memberIds = members.map((member) => member.id);
+    if (memberIds.length) await tx.delete(mediaCredits).where(inArray(mediaCredits.contributorId, memberIds));
+    await tx.delete(uploads).where(eq(uploads.eventId, id));
+    await tx.delete(media).where(eq(media.eventId, id));
+    await tx.delete(eventMembers).where(eq(eventMembers.eventId, id));
+    await tx.delete(events).where(eq(events.id, id));
+  });
+
+  const provider = activeProvider();
+  await Promise.all([...keys].map((key) => provider.deleteObject(key).catch(() => undefined)));
+  return { ok: true };
 }
 
 export async function closeEvent(user: { id: string; role: string }, id: string) {
