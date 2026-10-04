@@ -1,18 +1,21 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HostFrame } from "@/components/chrome";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { HostEvent } from "@/lib/types";
 
 type Destination = { kind: string; name: string; connected: boolean; detail: string; folderLayout?: string };
 
 export default function SettingsPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [event, setEvent] = useState<HostEvent | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [saved, setSaved] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api<{ event: HostEvent }>(`/api/events/${params.id}`).then((data) => setEvent(data.event));
@@ -198,6 +201,33 @@ export default function SettingsPage() {
           {saved ? <span className="ok">{saved}</span> : null}
         </div>
       </form>
+      <div className="card stack" style={{ maxWidth: 680, marginTop: 22 }}>
+        <strong>Delete this event</strong>
+        <p className="fine">Removes the album, the join code, and every photo. Use this when the event was created by mistake.</p>
+        {deleteError ? <p className="bad">{deleteError}</p> : null}
+        <div>
+          <button
+            className="btn danger small"
+            type="button"
+            disabled={deleting}
+            onClick={() => {
+              if (!window.confirm(`Delete "${event.name}"? The join code stops working and every photo in it is removed. This cannot be undone.`)) {
+                return;
+              }
+              setDeleting(true);
+              setDeleteError("");
+              api(`/api/events/${event.id}`, { method: "DELETE" })
+                .then(() => router.push("/host"))
+                .catch((err) => {
+                  setDeleteError(err instanceof ApiError ? err.message : "Could not delete the event");
+                  setDeleting(false);
+                });
+            }}
+          >
+            {deleting ? "Deleting…" : "Delete event"}
+          </button>
+        </div>
+      </div>
     </HostFrame>
   );
 }
